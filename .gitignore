@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+#data folders
+BorderofNunavutRegions/
+GIS_DATA_MAPB_2021DNLUP/
+planningunit_25km/
