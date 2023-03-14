@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>My Form</title>
+</head>
+<body>
+    <form id="my-form">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name"><br><br>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email"><br><br>
+        <button type="submit">Submit</button>
+    </form>
+
+    <script>
+        const form = document.querySelector('#my-form');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const name = document.querySelector('#name').value;
+            const email = document.querySelector('#email').value;
+
+            const data = {name, email};
+
+            const response = await fetch('/my_endpoint', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const responseData = await response.json();
+            console.log(responseData);
+        });
+    </script>
+</body>
+</html>
