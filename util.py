@@ -22,20 +22,28 @@ from tkinter import Tk, Frame, Listbox, Scrollbar, Button
 from tkinter.constants import *
 from typing import List
 from glob import glob
+from defs import *
 
 
-# filedialog file types
-ft_shapefile = ("Shapefile", "*.shp")
-ft_geo_package = ("GeoPackage ", "*.gpkg")
-ft_geodatabase = ("File Geodatabase", "*.gdb")
-ft_csv = ("Comma-separated values", "*.csv")
-ft_json = ("Json", ("*.geojson", "*.json"))
-ft_kml = ("Keyhole Markup Language", "*.KML")
-ft_any = ("All files", "*.*")
-ft_none = ("Any", "")
-ft_standard = [ft_shapefile, ft_geo_package, ft_any]
-ft_standard_save = [ft_csv, ft_shapefile]
-ft_all = [ft_any, ft_csv, ft_json, ft_shapefile, ft_geo_package, ft_kml]
+
+def print_error_msg(msg) -> None:
+    print(f"{RED}{msg}{RST}")
+    return
+
+
+def get_user_float(msg: str) -> float:
+    while True:
+        try:
+            return float(
+                input(
+    f"""
+    {msg}"""
+                )
+            )
+
+        except ValueError:
+            print_error_msg(msg_value_error)
+            continue
 
 
 def get_file(
@@ -142,7 +150,7 @@ def get_files_from_dir(
     return files if len(files) else None
 
 
-def save_file(
+def get_save_file_name(
     f_types: tuple[str, str] | list[tuple[str, str]] = ft_standard_save,
     title: str = "Save File",
     initialdir=getcwd(),
@@ -232,9 +240,7 @@ def get_user_selection(
 
     # create listbox and pack it
     list_length = 25 if len(item_list) > 25 else len(item_list)
-    lb = Listbox(
-        frame, height=list_length, width=0, selectmode=multi, activestyle=NONE
-    )
+    lb = Listbox(frame, height=list_length, width=0, selectmode=multi, activestyle=NONE)
     lb.pack(side=LEFT)
 
     # pack vertical scrollbar
