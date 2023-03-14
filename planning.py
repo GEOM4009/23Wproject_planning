@@ -8,6 +8,9 @@ import pandas as pd
 os.environ["USE_PYGEOS"] = "0"
 import geopandas as gpd
 import argparse
+import shapely.geometry import Polygon  
+import tkinter as tk
+from tkinter import filedialog
 
 
 # Global Variables
@@ -43,6 +46,47 @@ def create_planning_unit(hex_size: float, grid_size: float , pos: tuple(float, f
 
 def select_planning_units() -> list(int):
     # ask for input()
+    extent_str = input("Enter extents as xmin ymin xmax ymax: ")
+    extent = list(map(float, extent_str.split()))
+    
+    poly = gpd.GeoSeries([{
+        'type': 'Polygon',
+        'coordinates': [[
+            [extent[0], extent[1]],
+            [extent[2], extent[1]],
+            [extent[2], extent[3]],
+            [extent[0], extent[3]],
+            [extent[0], extent[1]]
+        ]]
+    }], crs='epsg:4326')
+    selected_hexagons = hexagons[hexagons.intersects(poly[0])]
+
+    
+    userPUID = input("What is the PUID? Type the PUID's and put a space between each one':")
+    selected_hexagons = hexagons[hexagons.PUID.isin(puids.split(','))]
+    
+    
+    userShapefile = input("What is the path to the Shapefile?:")
+
+    # Find intersecting hexagons
+    selected_poly = gpd.read_file(userShapefile)
+    selected_hexagons = hexagons[hexagons.intersects(selected_poly.geometry.unary_union)]    
+    
+    userGUID = input("What is the GUID?:")
+    
+    selected_poly = gpd.GeoDataFrame(geometry=[hexagons.unary_union])
+    selected_poly.plot()
+    plt.show()
+    selected_hexagons = hexagons[hexagons.intersects(selected_poly.geometry.unary_union)]
+    
+    # Create new filtered gpd containing hexagons from selection
+    filtered_gpd = selected_hexagons.copy()
+
+# Optionally display the result of the hexagons within the area of interest.
+    if input_type == "extents" or input_type == "shapefile" or input_type == "GUI":
+        filtered_gpd.plot()
+        plt.show()
+        
     # 1 Interactive map
     # 2 csv #do we want gui for this, easily done with Tkinter
     # 3 shp/gpgk file #do we want gui for this, easily done with Tkinter
