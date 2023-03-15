@@ -155,11 +155,11 @@ def select_planning_units(planning_unit_grid: gpd.GeoDataFrame) -> gpd.GeoDataFr
                         selection = int(
                          input(
                     """
-    Select Planning Units
+    Select Planning Units Manual Input Menu
         1 Extents
         2 PUIDS
         3 Extents from File
-        9 Return to Main Menu
+        9 Return to Select Planning Units Menu
     >>>"""))
                         if selection == 1:
                             # 1 Extents
@@ -175,7 +175,7 @@ def select_planning_units(planning_unit_grid: gpd.GeoDataFrame) -> gpd.GeoDataFr
                             break
                         else:
                             print_error_msg(msg_value_error)
-                        continue
+                            continue
                     except ValueError:
                         print_error_msg(msg_value_error)
 
