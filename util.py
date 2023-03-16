@@ -25,18 +25,45 @@ from glob import glob
 from defs import *
 
 
-
 def print_error_msg(msg) -> None:
+    """
+    Author: Mitch
+
+    Parameters
+    ----------
+    msg : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None
+        DESCRIPTION.
+
+    """
     print(f"{RED}{msg}{RST}")
     return
 
 
 def get_user_float(msg: str) -> float:
+    """
+    Author: Mitch
+
+    Parameters
+    ----------
+    msg : str
+        DESCRIPTION.
+
+    Returns
+    -------
+    float
+        DESCRIPTION.
+
+    """
     while True:
         try:
             return float(
                 input(
-    f"""
+                    f"""
     {msg}"""
                 )
             )
@@ -45,8 +72,10 @@ def get_user_float(msg: str) -> float:
             print_error_msg(msg_value_error)
             continue
 
+
 def get_top_root() -> Tk:
     """
+    Author: Mitch
     Creates an invisible root window that has been forced to top and into focus.
 
     Returns
@@ -57,8 +86,8 @@ def get_top_root() -> Tk:
     root = Tk()
     root.withdraw()
     root.overrideredirect(True)
-    root.geometry('0x0+0+0')
-    root.attributes('-alpha', 0)
+    root.geometry("0x0+0+0")
+    root.attributes("-alpha", 0)
     root.deiconify()
     root.lift()
     root.attributes("-topmost", True)
@@ -66,12 +95,14 @@ def get_top_root() -> Tk:
     root.focus_force()
     return root
 
+
 def get_file(
     f_types: tuple[str, str] | list[tuple[str, str]] = ft_standard,
     title: str = "Select File To Load",
     initialdir=getcwd(),
 ) -> str:
     """
+    Author: Mitch
     Opens a tkinter file dialog for a user to selelect a single file to load.
 
     Parameters
@@ -99,6 +130,7 @@ def get_files(
     multi: bool = True,
 ) -> List[str]:
     """
+    Author: Mitch
     Opens a tkinter file dialog for a user to selelect file(s) to load.
 
     Parameters
@@ -133,6 +165,7 @@ def get_files_from_dir(
     initialdir=getcwd(),
 ) -> List[str]:
     """
+    Author: Mitch
     Opens a tkinter file dialog for a user to selelect a directory. All
     contained files matching the filter will be returned.
 
@@ -154,9 +187,7 @@ def get_files_from_dir(
 
     wd = getcwd()
     root = get_top_root()
-    dir = tkinter.filedialog.askdirectory(
-        title=title, initialdir=initialdir, mustexist=True, parent=root
-    )
+    dir = tkinter.filedialog.askdirectory(title=title, initialdir=initialdir, mustexist=True, parent=root)
     root.destroy()
     files = []
     if dir != None:
@@ -182,6 +213,7 @@ def get_save_file_name(
     initialdir=getcwd(),
 ) -> str:
     """
+    Author: Mitch
     Open a tkinter file dialog for the user to indicate where and what to
     save a file as.
 
@@ -206,7 +238,7 @@ def get_save_file_name(
         title=title,
         defaultextension=ft_standard_save[0][1],
         filetypes=f_types,
-        parent=root
+        parent=root,
     )
     root.destroy()
     return file if len(file) else None
@@ -221,6 +253,7 @@ def get_user_selection(
     bg: str = "#5ea5c9",
 ) -> list[any]:
     """
+    Author: Mitch
     Opens a Tkinter window with the given list of items to select from.
     Selction can be single or multiple.
 

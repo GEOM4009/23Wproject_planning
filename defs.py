@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Author: Mitch
+"""
+
+
 # filedialog file types
 ft_shapefile = ("Shapefile", "*.shp")
 ft_geo_package = ("GeoPackage ", "*.gpkg")

@@ -20,17 +20,29 @@ os.environ["USE_PYGEOS"] = "0"
 import geopandas as gpd
 import pandas as pd
 
-import logging
-
-log = logging.getLogger("werkzeug")
-log.setLevel(logging.ERROR)
 
 # Global Variables
 run_tests = False
 verbose = True
 
+# %% create a planning unit grid
+
 
 def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
+    """
+    Author: Lucas
+
+    Parameters
+    ----------
+    planning_unit_grid : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
 
     while True:
         try:
@@ -52,47 +64,48 @@ def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
 
         if selection == 1:
             # 1 Manual Input
-            resolution = get_user_float(f'''
+            resolution = get_user_float(
+                """
     Enter a Grid Resolution (0-15),
         Edge length for each resolution:
         0(1107km), 1(418km), 2(158km), 3(59.8km),
         4(22.6km), 5(8.54km), 6(3.23km), 7(1.22km),
         8(461m), 9(174m), 10(65.9m), 11(24.9m),
-        12(9.41m), 13(3.56m), 14(1.35m), 15(0.509m): ''')
+        12(9.41m), 13(3.56m), 14(1.35m), 15(0.509m): """
+            )
             grid_size_x = get_user_float("Grid Size X (km): ")
             grid_size_y = get_user_float("Grid Size Y (km): ")
             grid_lat = get_user_float("Latitude of grid anchor point (dd): ")
             grid_lon = get_user_float("Longitude of grid anchor point (dd): ")
 
-            xdiff = grid_size_x/2
-            ydiff = grid_size_y/2
+            xdiff = grid_size_x / 2
+            ydiff = grid_size_y / 2
 
-            xmax =  grid_lon + (180/pi)*(xdiff/6378137)/cos(grid_lat)
-            xmin =  grid_lon - (180/pi)*(xdiff/6378137)/cos(grid_lat)
-            ymax = grid_lat + (180/pi)*(ydiff/6378137)
-            ymin = grid_lat - (180/pi)*(ydiff/6378137)
-            geo = {'type': 'Polygon',
-                    'coordinates': [
-                        [   [xmin, ymin],
-                            [xmin, ymax],
-                            [xmax, ymax],
-                            [xmax, ymin],
-                            [xmin, ymin]]]}
+            xmax = grid_lon + (180 / pi) * (xdiff / 6378137) / cos(grid_lat)
+            xmin = grid_lon - (180 / pi) * (xdiff / 6378137) / cos(grid_lat)
+            ymax = grid_lat + (180 / pi) * (ydiff / 6378137)
+            ymin = grid_lat - (180 / pi) * (ydiff / 6378137)
+            geo = {
+                "type": "Polygon",
+                "coordinates": [[[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin], [xmin, ymin]]],
+            }
 
             hexes = h3.polyfill(geo, resolution)
             df = pd.DataFrame(list(hexes))
-            df.columns = ['Hex_ID']
-            df['PUID'] = df.index + 1
-            def add_geometry(row):
-              points = h3.h3_to_geo_boundary(row['Hex_ID'], True)
-              return Polygon(points)
+            df.columns = ["Hex_ID"]
+            df["PUID"] = df.index + 1
 
-            df['geometry'] = (df.apply(add_geometry,axis=1))
-            planning_unit_grid = gpd.GeoDataFrame(df, geometry=df['geometry'], crs = "epsg:9822")
-            planning_unit_grid.to_file('planning_unit_grid.shp')
+            def add_geometry(row):
+                points = h3.h3_to_geo_boundary(row["Hex_ID"], True)
+                return Polygon(points)
+
+            df["geometry"] = df.apply(add_geometry, axis=1)
+            planning_unit_grid = gpd.GeoDataFrame(df, geometry=df["geometry"], crs="epsg:9822")
+            planning_unit_grid.to_file("planning_unit_grid.shp")
             break
         elif selection == 2:
             # 2 Interactive
+            print(app.get_input_from_map())
             continue
         elif selection == 3:
             # 3 Grid from File
@@ -114,6 +127,8 @@ def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
             continue
     return planning_unit_grid
 
+
+# %% Select planning units
 
 # def select_planning_units():
 #     # ask for input()
@@ -176,6 +191,20 @@ def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
 
 
 def select_planning_units(planning_unit_grid: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """
+    Author: Ethan
+
+    Parameters
+    ----------
+    planning_unit_grid : gpd.GeoDataFrame
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
 
     filtered_planning_unit_grid = planning_unit_grid.copy(deep=True)
 
@@ -249,7 +278,24 @@ def select_planning_units(planning_unit_grid: gpd.GeoDataFrame) -> gpd.GeoDataFr
     return filtered_planning_unit_grid
 
 
+# %% Load planning layers from file
+
+
 def load_planning_layers(planning_layers: list) -> list[gpd.GeoDataFrame]:
+    """
+    Author: Nata
+
+    Parameters
+    ----------
+    planning_layers : list
+        DESCRIPTION.
+
+    Returns
+    -------
+    planning_layers : TYPE
+        DESCRIPTION.
+
+    """
     # get list of files to load
     while True:
         try:
@@ -292,9 +338,26 @@ def load_planning_layers(planning_layers: list) -> list[gpd.GeoDataFrame]:
     return planning_layers
 
 
+# %% Filter for specific conservation features
+
+
 def query_planning_layers(
     planning_layers: list[gpd.GeoDataFrame],
 ) -> list[gpd.GeoDataFrame]:
+    """
+    Author: Nata
+
+    Parameters
+    ----------
+    planning_layers : list[gpd.GeoDataFrame]
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
 
     filtered_planning_layers = []
 
@@ -349,9 +412,26 @@ def query_planning_layers(
     return filtered_planning_layers
 
 
-def calc_overlap(
-    planning_grid: gpd.GeoDataFrame, cons_layers: list[gpd.GeoDataFrame]
-) -> list[gpd.GeoDataFrame]:
+# %% Calculate planning unit / conservation feature overlap
+
+
+def calc_overlap(planning_grid: gpd.GeoDataFrame, cons_layers: list[gpd.GeoDataFrame]) -> list[gpd.GeoDataFrame]:
+    """
+    Author: Mitch
+
+    Parameters
+    ----------
+    planning_grid : gpd.GeoDataFrame
+        DESCRIPTION.
+    cons_layers : list[gpd.GeoDataFrame]
+        DESCRIPTION.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
 
     if not len(cons_layers):
         print_error_msg("No planning layers loaded.")
@@ -392,24 +472,52 @@ def calc_overlap(
 # def create_planning_unit(hex_size: float, grid_size: float , pos: tuple(float, float)) -> gpd.geoseries:
 #     pass
 
+# %% CRS helper function
+
 
 def validate_crs(crs: any, target_crs: str) -> bool:
+    """
+    Author: Winaa
+
+    Parameters
+    ----------
+    crs : any
+        DESCRIPTION.
+    target_crs : str
+        DESCRIPTION.
+
+    Returns
+    -------
+    bool
+        DESCRIPTION.
+
+    """
     return
+
+
+# %% Main
 
 
 def main():
     """
-    Parameters
-    ----------
+    Author: Mitch
 
     Returns
     -------
     int
-        0 for success, -1 for error
+        DESCRIPTION.
+
     """
 
     def main_menu():
+        """
+        Author: Mitch
 
+        Returns
+        -------
+        None.
+
+        """
         planning_unit_grid = gpd.GeoDataFrame()
         filtered_planning_unit_grid = gpd.GeoDataFrame()
         planning_layers = []  # gpd.GeoDataFrame()
@@ -421,7 +529,7 @@ def main():
             try:
                 selection = int(
                     input(
-                    """
+                        """
     Main Menu:
         1 Create Planning Unit Grid
         2 Select Planning Units
@@ -459,24 +567,16 @@ def main():
                 # intersections_gdf = calc_overlap(
                 #     filtered_planning_unit_grid, filtered_planning_layers
                 # )
-                intersections_gdf = calc_overlap(
-                    planning_unit_grid, planning_layers
-                )
+                intersections_gdf = calc_overlap(planning_unit_grid, planning_layers)
                 if len(intersections_gdf):
-                    intersections_df = pd.DataFrame(
-                        gpd.GeoDataFrame(
-                            pd.concat(intersections_gdf, ignore_index=True)
-                        )
-                    )
+                    intersections_df = pd.DataFrame(gpd.GeoDataFrame(pd.concat(intersections_gdf, ignore_index=True)))
                 continue
             elif selection == 7:
                 # Save Results
                 if intersections_df.empty:
                     print_error_msg("No results to save.")
                     continue
-                file_name = get_save_file_name(
-                    title="Save results to csv", f_types=ft_csv
-                )
+                file_name = get_save_file_name(title="Save results to csv", f_types=ft_csv)
                 intersections_df.to_csv(file_name, columns=[PUID, ID, AREA_X], index=False)
                 continue
             elif selection == 9:
