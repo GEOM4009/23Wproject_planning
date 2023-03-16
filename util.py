@@ -122,7 +122,7 @@ def get_files(
         initialdir=initialdir, title=title, filetypes=f_types, multiple=multi, parent=root
     )
     root.destroy()
-    return [files] if len(files) else None
+    return list(files) if len(files) else None
 
 
 def get_files_from_dir(
