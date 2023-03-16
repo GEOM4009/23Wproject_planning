@@ -72,7 +72,7 @@ def index():
     if request.method == 'POST':
         coords = request.get_json()
         load = geojson.loads(json.dumps(coords))
-        shape = Polygon(load['features'][0]['geometry']['coordinates'])
+        shape = Polygon(load['features'][0]['geometry']['coordinates']) if len(load['features']) else None
         job_queue.put(shape)
         return "", 200
 
@@ -81,7 +81,6 @@ def index():
         m.get_root().render()
         header = m.get_root().header.render()
         body_html = m.get_root().html.render()
-
         script = m.get_root().script.render()
 
         return render_template_string(

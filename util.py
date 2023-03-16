@@ -121,6 +121,8 @@ def get_files(
     files = tkinter.filedialog.askopenfilename(
         initialdir=initialdir, title=title, filetypes=f_types, multiple=multi, parent=root
     )
+    if not multi:
+        files = (files,)
     root.destroy()
     return list(files) if len(files) else None
 

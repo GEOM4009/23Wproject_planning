@@ -13,7 +13,7 @@ from time import sleep
 
 from shapely.geometry import Polygon
 import h3
-import math
+from math import pi, cos
 
 
 os.environ["USE_PYGEOS"] = "0"
@@ -30,7 +30,7 @@ run_tests = False
 verbose = True
 
 
-def create_planning_unit_grid():
+def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
 
     while True:
         try:
@@ -44,7 +44,7 @@ def create_planning_unit_grid():
         4 Extents from File
         5 View on Map
         9 Return to Main Menu
-    >>>"""
+    >>> """
                 )
             )
         except ValueError:
@@ -52,12 +52,13 @@ def create_planning_unit_grid():
 
         if selection == 1:
             # 1 Manual Input
-            resolution = get_user_float(f"Enter a Grid Resolution (0-15),\
-                        Edge length for each resolution:\
-                        0(1107km), 1(418km), 2(158km), 3(59.8km),\
-                        4(22.6km), 5(8.54km), 6(3.23km), 7(1.22km),\
-                        8(461m), 9(174m), 10(65.9m), 11(24.9m),\
-                        12(9.41m), 13(3.56m), 14(1.35m),'15(0.509m),: ")
+            resolution = get_user_float(f'''
+    Enter a Grid Resolution (0-15),
+        Edge length for each resolution:
+        0(1107km), 1(418km), 2(158km), 3(59.8km),
+        4(22.6km), 5(8.54km), 6(3.23km), 7(1.22km),
+        8(461m), 9(174m), 10(65.9m), 11(24.9m),
+        12(9.41m), 13(3.56m), 14(1.35m), 15(0.509m): ''')
             grid_size_x = get_user_float("Grid Size X (km): ")
             grid_size_y = get_user_float("Grid Size Y (km): ")
             grid_lat = get_user_float("Latitude of grid anchor point (dd): ")
@@ -66,10 +67,10 @@ def create_planning_unit_grid():
             xdiff = grid_size_x/2
             ydiff = grid_size_y/2
 
-            xmax =  grid_lon + (180/math.pi)*(xdiff/6378137)/math.cos(grid_lat)
-            xmin =  grid_lon - (180/math.pi)*(xdiff/6378137)/math.cos(grid_lat)
-            ymax = grid_lat + (180/math.pi)*(ydiff/6378137)
-            ymin = grid_lat - (180/math.pi)*(ydiff/6378137)
+            xmax =  grid_lon + (180/pi)*(xdiff/6378137)/cos(grid_lat)
+            xmin =  grid_lon - (180/pi)*(xdiff/6378137)/cos(grid_lat)
+            ymax = grid_lat + (180/pi)*(ydiff/6378137)
+            ymin = grid_lat - (180/pi)*(ydiff/6378137)
             geo = {'type': 'Polygon',
                     'coordinates': [
                         [   [xmin, ymin],
@@ -89,13 +90,16 @@ def create_planning_unit_grid():
             df['geometry'] = (df.apply(add_geometry,axis=1))
             planning_unit_grid = gpd.GeoDataFrame(df, geometry=df['geometry'], crs = "epsg:9822")
             planning_unit_grid.to_file('planning_unit_grid.shp')
-            continue
+            break
         elif selection == 2:
             # 2 Interactive
             continue
         elif selection == 3:
             # 3 Grid from File
-            continue
+            file = get_file(title="Select a file to load the grid from")
+            print(file)
+            planning_unit_grid = gpd.read_file(file)
+            break
         elif selection == 4:
             # 4 Extents from File
             continue
@@ -107,8 +111,8 @@ def create_planning_unit_grid():
             break
         else:
             print_error_msg(msg_value_error)
-            continue        
-    return
+            continue
+    return planning_unit_grid
 
 
 # def select_planning_units():
@@ -189,7 +193,7 @@ def select_planning_units(planning_unit_grid: gpd.GeoDataFrame) -> gpd.GeoDataFr
         2 Interactive
         3 Extents from File
         9 Return to Main Menu
-    >>>"""
+    >>> """
                 )
             )
         except ValueError:
@@ -207,7 +211,7 @@ def select_planning_units(planning_unit_grid: gpd.GeoDataFrame) -> gpd.GeoDataFr
         2 PUIDS
         3 Extents from File
         9 Return to Select Planning Units Menu
-    >>>"""
+    >>> """
                         )
                     )
                 except ValueError:
@@ -245,7 +249,7 @@ def select_planning_units(planning_unit_grid: gpd.GeoDataFrame) -> gpd.GeoDataFr
     return filtered_planning_unit_grid
 
 
-def load_planning_layers() -> list[gpd.GeoDataFrame]:
+def load_planning_layers(planning_layers: list) -> list[gpd.GeoDataFrame]:
     # get list of files to load
     while True:
         try:
@@ -258,7 +262,7 @@ def load_planning_layers() -> list[gpd.GeoDataFrame]:
         3 Remove Layers
         4 View Layers on Map
         9 Return to Main Menu
-    >>>"""
+    >>> """
                 )
             )
         except ValueError:
@@ -269,7 +273,10 @@ def load_planning_layers() -> list[gpd.GeoDataFrame]:
             continue
         elif selection == 2:
             # 2 Select Files
-            continue
+            files = get_files(title="Select planning layer files")
+            for file in files:
+                planning_layers.append(gpd.read_file(file))
+            break
         elif selection == 3:
             # 3 Remove Layers
             continue
@@ -282,7 +289,7 @@ def load_planning_layers() -> list[gpd.GeoDataFrame]:
         else:
             print_error_msg(msg_value_error)
             continue
-    return
+    return planning_layers
 
 
 def query_planning_layers(
@@ -310,7 +317,7 @@ def query_planning_layers(
         3 GROUP_
         4 NAME
         9 Return to Main Menu
-    >>>"""
+    >>> """
                 )
             )
         # 5 By Area --> Not sure about this one, could produce another menu
@@ -357,8 +364,8 @@ def calc_overlap(
 
     for layer in cons_layers:
         # can add crs check here
-        intersection = gpd.overlay(planning_grid, cons_layers, how="intersection")
-        # add intersection gpd to list
+        intersection = gpd.overlay(planning_grid, layer, how="intersection")
+        # add intersection gdf to list
         intersection[AREA_X] = intersection.area
         intersections.append(intersection)
 
@@ -414,31 +421,31 @@ def main():
             try:
                 selection = int(
                     input(
-                        """
-        Main Menu:
-            1 Create Planning Unit Grid
-            2 Select Planning Units
-            3 Load Planning Layers
-            4 Select Conservation Features
-            5 View Layers
-            6 Calculate Overlap
-            7 Save Results
-            9 Quit
-        >>>"""
+                    """
+    Main Menu:
+        1 Create Planning Unit Grid
+        2 Select Planning Units
+        3 Load Planning Layers
+        4 Select Conservation Features
+        5 View Layers
+        6 Calculate Overlap
+        7 Save Results
+        9 Quit
+    >>> """
                     )
                 )
             except ValueError:
                 print_error_msg(msg_value_error)
 
             if selection == 1:
-                planning_unit_grid = create_planning_unit_grid()
+                planning_unit_grid = create_planning_unit_grid(planning_unit_grid)
                 continue
             elif selection == 2:
                 filtered_planning_unit_grid = select_planning_units(planning_unit_grid)
                 continue
             elif selection == 3:
                 # load planning layers
-                planning_layers = load_planning_layers()
+                planning_layers = load_planning_layers(planning_layers)
                 continue
             elif selection == 4:
                 # select conservation features
@@ -449,8 +456,11 @@ def main():
                 continue
             elif selection == 6:
                 # Calculate Overlap
+                # intersections_gdf = calc_overlap(
+                #     filtered_planning_unit_grid, filtered_planning_layers
+                # )
                 intersections_gdf = calc_overlap(
-                    filtered_planning_unit_grid, filtered_planning_layers
+                    planning_unit_grid, planning_layers
                 )
                 if len(intersections_gdf):
                     intersections_df = pd.DataFrame(
@@ -465,9 +475,9 @@ def main():
                     print_error_msg("No results to save.")
                     continue
                 file_name = get_save_file_name(
-                    title="Save Results to csv", f_types=ft_csv
+                    title="Save results to csv", f_types=ft_csv
                 )
-                intersections_df.to_csv("output.csv", columns=[PUID, ID, AREA_X])
+                intersections_df.to_csv(file_name, columns=[PUID, ID, AREA_X], index=False)
                 continue
             elif selection == 9:
                 # quit
