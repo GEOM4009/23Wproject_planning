@@ -53,8 +53,8 @@ def create_planning_unit_grid():
                 xdiff = grid_size_x/2
                 ydiff = grid_size_y/2
 
-                xmax =  grid_lon + (180/pi)*(xdiff/6378137)/cos(lat0)
-                xmin =  grid_lon - (180/pi)*(xdiff/6378137)/cos(lat0)
+                xmax =  grid_lon + (180/pi)*(xdiff/6378137)/cos(grid_lat)
+                xmin =  grid_lon - (180/pi)*(xdiff/6378137)/cos(grid_lat)
                 ymax = grid_lat + (180/pi)*(ydiff/6378137)
                 ymin = grid_lat - (180/pi)*(ydiff/6378137)
                 geo = {'type': 'Polygon',
@@ -74,7 +74,7 @@ def create_planning_unit_grid():
                   return Polygon(points)
 
                 df['geometry'] = (df.apply(add_geometry,axis=1))
-                planning_unit_grid = gpd.GeoDataFrame(df, geometry=df['geometry'], crs = "epsg:")
+                planning_unit_grid = gpd.GeoDataFrame(df, geometry=df['geometry'], crs = "epsg:9822")
                 planning_unit_grid.to_file('planning_unit_grid.shp')
                 continue
             elif selection == 2:
