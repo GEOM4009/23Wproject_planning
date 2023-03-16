@@ -2,15 +2,22 @@
 """
 """
 # Import modules
-from tkinter import *
 from util import *
 from defs import *
 import argparse
 import os
+import threading
+import app
+from time import sleep
 
 os.environ["USE_PYGEOS"] = "0"
 import geopandas as gpd
 import pandas as pd
+
+import logging
+
+log = logging.getLogger("werkzeug")
+log.setLevel(logging.ERROR)
 
 # Global Variables
 run_tests = False
@@ -34,38 +41,44 @@ def create_planning_unit_grid():
     >>>"""
                 )
             )
-            if selection == 1:
-                # 1 Manual Input
-                hexagon_size = get_user_float(f"Hexagon Size (m{SQ}): ")
-                grid_size_x = get_user_float("Grid Size X (km): ")
-                grid_size_y = get_user_float("Grid Size Y (km): ")
-                # if utm:
-                # grid_lat = get_user_float("Easting of grid anchor point (dd): ")
-                # grid_lon = get_user_float("Northing of grid anchor point (dd): ")
-                grid_lat = get_user_float("Latitude of grid anchor point (dd): ")
-                grid_lon = get_user_float("Longitude of grid anchor point (dd): ")
-                continue
-            elif selection == 2:
-                # 2 Interactive
-                continue
-            elif selection == 3:
-                # 3 Grid from File
-                continue
-            elif selection == 4:
-                # 4 Extents from File
-                continue
-            elif selection == 5:
-                # 5 View on Map
-                continue
-            elif selection == 9:
-                # 9 Return to Main Menu
-                break
-            else:
-                print_error_msg(msg_value_error)
-                continue
         except ValueError:
             print_error_msg(msg_value_error)
+
+        if selection == 1:
+            # 1 Manual Input
+            hexagon_size = get_user_float(f"Hexagon Size (m{SQ}): ")
+            grid_size_x = get_user_float("Grid Size X (km): ")
+            grid_size_y = get_user_float("Grid Size Y (km): ")
+            # if utm:
+            # grid_lat = get_user_float("Easting of grid anchor point (dd): ")
+            # grid_lon = get_user_float("Northing of grid anchor point (dd): ")
+            grid_lat = get_user_float("Latitude of grid anchor point (dd): ")
+            grid_lon = get_user_float("Longitude of grid anchor point (dd): ")
+            continue
+        elif selection == 2:
+            # 2 Interactive
+            data = app.get_input_from_map(
+                title="Please draw a rectangle on the map to select planning units."
+            )
+            print(data)
+            continue
+        elif selection == 3:
+            # 3 Grid from File
+            continue
+        elif selection == 4:
+            # 4 Extents from File
+            continue
+        elif selection == 5:
+            # 5 View on Map
+            continue
+        elif selection == 9:
+            # 9 Return to Main Menu
+            break
+        else:
+            print_error_msg(msg_value_error)
+            continue
     return
+
 
 # def select_planning_units():
 #     # ask for input()
@@ -148,51 +161,55 @@ def select_planning_units(planning_unit_grid: gpd.GeoDataFrame) -> gpd.GeoDataFr
     >>>"""
                 )
             )
-            if selection == 1:
-                # 1 Manual Input
-                while True:
-                    try:
-                        selection = int(
-                         input(
-                    """
+        except ValueError:
+            print_error_msg(msg_value_error)
+
+        if selection == 1:
+            # 1 Manual Input
+            while True:
+                try:
+                    selection = int(
+                        input(
+                            """
     Select Planning Units Manual Input Menu
         1 Extents
         2 PUIDS
         3 Extents from File
         9 Return to Select Planning Units Menu
-    >>>"""))
-                        if selection == 1:
-                            # 1 Extents
-                            break
-                        elif selection == 2:
-                            # 2 PUIDS
-                            break
-                        elif selection == 3:
-                            # 3 Extents from File
-                            break
-                        elif selection == 9:
-                        # 9 Return to Main Menu
-                            break
-                        else:
-                            print_error_msg(msg_value_error)
-                            continue
-                    except ValueError:
-                        print_error_msg(msg_value_error)
+    >>>"""
+                        )
+                    )
+                except ValueError:
+                    print_error_msg(msg_value_error)
 
-            elif selection == 2:
-                # 2 Interactive
-                continue
-            elif selection == 3:
-                # 3 Grid from File
-                continue
-            elif selection == 9:
-                # 9 Return to Main Menu
-                break
-            else:
-                print_error_msg(msg_value_error)
-                continue
-        except ValueError:
+                if selection == 1:
+                    # 1 Extents
+                    break
+                elif selection == 2:
+                    # 2 PUIDS
+                    break
+                elif selection == 3:
+                    # 3 Extents from File
+                    break
+                elif selection == 9:
+                    # 9 Return to Main Menu
+                    break
+                else:
+                    print_error_msg(msg_value_error)
+                    continue
+
+        elif selection == 2:
+            # 2 Interactive
+            continue
+        elif selection == 3:
+            # 3 Grid from File
+            continue
+        elif selection == 9:
+            # 9 Return to Main Menu
+            break
+        else:
             print_error_msg(msg_value_error)
+            continue
 
     return filtered_planning_unit_grid
 
@@ -213,26 +230,27 @@ def load_planning_layers() -> list[gpd.GeoDataFrame]:
     >>>"""
                 )
             )
-            if selection == 1:
-                # 1 All from Directory
-                continue
-            elif selection == 2:
-                # 2 Select Files
-                continue
-            elif selection == 3:
-                # 3 Remove Layers
-                continue
-            elif selection == 4:
-                # 4 View layers on Map
-                continue
-            elif selection == 9:
-                # 9 Return to Main Menu
-                break
-            else:
-                print_error_msg(msg_value_error)
-                continue
         except ValueError:
             print_error_msg(msg_value_error)
+
+        if selection == 1:
+            # 1 All from Directory
+            continue
+        elif selection == 2:
+            # 2 Select Files
+            continue
+        elif selection == 3:
+            # 3 Remove Layers
+            continue
+        elif selection == 4:
+            # 4 View layers on Map
+            continue
+        elif selection == 9:
+            # 9 Return to Main Menu
+            break
+        else:
+            print_error_msg(msg_value_error)
+            continue
     return
 
 
@@ -264,30 +282,31 @@ def query_planning_layers(
     >>>"""
                 )
             )
-            # 5 By Area --> Not sure about this one, could produce another menu
-            # to get extents from intput, file, or interactive on map, but that
-            # may be redundant if we just limits to the bounds of the selected
-            # planning units to start with.
-            if selection == 1:
-                # 1 ID
-                continue
-            elif selection == 2:
-                # 2 CLASS_TYPE
-                continue
-            elif selection == 3:
-                # 3 GROUP_
-                continue
-            elif selection == 4:
-                # 3 NAME
-                continue
-            elif selection == 9:
-                # 9 Return to Main Menu
-                break
-            else:
-                print_error_msg(msg_value_error)
-                continue
+        # 5 By Area --> Not sure about this one, could produce another menu
+        # to get extents from intput, file, or interactive on map, but that
+        # may be redundant if we just limits to the bounds of the selected
+        # planning units to start with.
         except ValueError:
             print_error_msg(msg_value_error)
+
+        if selection == 1:
+            # 1 ID
+            continue
+        elif selection == 2:
+            # 2 CLASS_TYPE
+            continue
+        elif selection == 3:
+            # 3 GROUP_
+            continue
+        elif selection == 4:
+            # 3 NAME
+            continue
+        elif selection == 9:
+            # 9 Return to Main Menu
+            break
+        else:
+            print_error_msg(msg_value_error)
+            continue
 
     return filtered_planning_layers
 
@@ -351,33 +370,35 @@ def main():
         0 for success, -1 for error
     """
 
-    planning_unit_grid = gpd.GeoDataFrame()
-    filtered_planning_unit_grid = gpd.GeoDataFrame()
-    planning_layers = []  # gpd.GeoDataFrame()
-    filtered_planning_layers = []  # gpd.GeoDataFrame()
-    intersections_gdf = []
-    intersections_df = pd.DataFrame()
+    def main_menu():
 
-    while True:
-        try:
-            selection = int(
-                input(
-                    """
-    Main Menu:
-        1 Create Planning Unit Grid
-        2 Select Planning Units
-        3 Load Planning Layers
-        4 Select Conservation Features
-        5 View Layers
-        6 Calculate Overlap
-        7 Save Results
-        9 Quit
-    >>>"""
+        planning_unit_grid = gpd.GeoDataFrame()
+        filtered_planning_unit_grid = gpd.GeoDataFrame()
+        planning_layers = []  # gpd.GeoDataFrame()
+        filtered_planning_layers = []  # gpd.GeoDataFrame()
+        intersections_gdf = []
+        intersections_df = pd.DataFrame()
+
+        while True:
+            try:
+                selection = int(
+                    input(
+                        """
+        Main Menu:
+            1 Create Planning Unit Grid
+            2 Select Planning Units
+            3 Load Planning Layers
+            4 Select Conservation Features
+            5 View Layers
+            6 Calculate Overlap
+            7 Save Results
+            9 Quit
+        >>>"""
+                    )
                 )
-            )
-            if selection < 1 or selection > 4:
+            except ValueError:
                 print_error_msg(msg_value_error)
-                continue
+
             if selection == 1:
                 planning_unit_grid = create_planning_unit_grid()
                 continue
@@ -402,7 +423,9 @@ def main():
                 )
                 if len(intersections_gdf):
                     intersections_df = pd.DataFrame(
-                        gpd.GeoDataFrame(pd.concat(intersections_gdf, ignore_index=True))
+                        gpd.GeoDataFrame(
+                            pd.concat(intersections_gdf, ignore_index=True)
+                        )
                     )
                 continue
             elif selection == 7:
@@ -410,15 +433,34 @@ def main():
                 if intersections_df.empty:
                     print_error_msg("No results to save.")
                     continue
-                file_name = get_save_file_name(title="Save Results to csv", f_types=ft_csv )
+                file_name = get_save_file_name(
+                    title="Save Results to csv", f_types=ft_csv
+                )
                 intersections_df.to_csv("output.csv", columns=[PUID, ID, AREA_X])
                 continue
             elif selection == 9:
                 # quit
                 break
+        return
 
-        except ValueError:
-            print_error_msg(msg_value_error)
+    # start the main menu thread
+
+    def server_thread():
+        app.app.run()
+        return
+
+    server = threading.Thread(target=server_thread)
+    main_menu_thread = threading.Thread(target=main_menu)
+
+    server.start()
+    sleep(0.1)
+    main_menu_thread.start()
+    main_menu_thread.join()
+
+    if server.is_alive():
+        server.join(1.0)
+
+    print("All done!")
 
     return 0
 

@@ -31,3 +31,8 @@ ID = "ID"
 NAME = "NAME"
 PUID = "GRID_ID"
 AREA_X = "AREA_X"
+
+# other
+URL_INDEX = "http://127.0.0.1:5000/"
+URL_INPUT = "http://127.0.0.1:5000/input"
+SHUTDOWN_URL = "http://127.0.0.1:5000/shutdown"
