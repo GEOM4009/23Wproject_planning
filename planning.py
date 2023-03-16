@@ -53,10 +53,10 @@ def create_planning_unit_grid():
                 xdiff = grid_size_x/2
                 ydiff = grid_size_y/2
 
-                xmax =  grid_lon + (180/pi)*(xdiff/6378137)/cos(grid_lat)
-                xmin =  grid_lon - (180/pi)*(xdiff/6378137)/cos(grid_lat)
-                ymax = grid_lat + (180/pi)*(ydiff/6378137)
-                ymin = grid_lat - (180/pi)*(ydiff/6378137)
+                xmax =  grid_lon + (180/math.pi)*(xdiff/6378137)/math.cos(grid_lat)
+                xmin =  grid_lon - (180/math.pi)*(xdiff/6378137)/math.cos(grid_lat)
+                ymax = grid_lat + (180/math.pi)*(ydiff/6378137)
+                ymin = grid_lat - (180/math.pi)*(ydiff/6378137)
                 geo = {'type': 'Polygon',
                         'coordinates': [
                             [   [xmin, ymin],
