@@ -248,13 +248,34 @@ def select_planning_units(planning_unit_grid: gpd.GeoDataFrame) -> gpd.GeoDataFr
 
                 if selection == 1:
                     # 1 Extents
+                    extent_str = input("Enter extents as xmin ymin xmax ymax: ")
+                    extent = list(map(float, extent_str.split()))
+
+                    poly = gpd.GeoSeries([{
+                        'type': 'Polygon',
+                        'coordinates': [[
+                            [extent[0], extent[1]],
+                            [extent[2], extent[1]],
+                            [extent[2], extent[3]],
+                            [extent[0], extent[3]],
+                            [extent[0], extent[1]]
+                        ]]
+                    }], crs='epsg:4326')
+                    selected_hexagons = filtered_planning_unit_grid[hexagons.intersects(poly[0])]
                     break
                 elif selection == 2:
                     # 2 PUIDS
+                    userPUID = input("What is the PUID? Type the PUID's and put a space between each one':")
+                    selected_hexagons = hexagons[hexagons.PUID.isin(puids.split(','))]
                     break
                 elif selection == 3:
                     # 3 Extents from File
+                    userShapefile = input("What is the path to the Shapefile?:")
+                    # Find intersecting hexagons
+                    selected_poly = gpd.read_file(userShapefile)
+                    selected_hexagons = hexagons[hexagons.intersects(selected_poly.geometry.unary_union)]
                     break
+                
                 elif selection == 9:
                     # 9 Return to Main Menu
                     break
