@@ -7,6 +7,9 @@ from util import *
 from defs import *
 import argparse
 import os
+from shapely.geometry import Polygon
+import h3
+import math
 
 os.environ["USE_PYGEOS"] = "0"
 import geopandas as gpd
