@@ -45,6 +45,26 @@ def get_user_float(msg: str) -> float:
             print_error_msg(msg_value_error)
             continue
 
+def get_top_root() -> Tk:
+    """
+    Creates an invisible root window that has been forced to top and into focus.
+
+    Returns
+    -------
+    Tk
+        The invisible top level root window.
+    """
+    root = Tk()
+    root.withdraw()
+    root.overrideredirect(True)
+    root.geometry('0x0+0+0')
+    root.attributes('-alpha', 0)
+    root.deiconify()
+    root.lift()
+    root.attributes("-topmost", True)
+    root.after_idle(root.attributes, "-topmost", False)
+    root.focus_force()
+    return root
 
 def get_file(
     f_types: tuple[str, str] | list[tuple[str, str]] = ft_standard,
@@ -96,10 +116,12 @@ def get_files(
 
     if not isinstance(f_types, list):
         f_types = [f_types]
-    files = tkinter.filedialog.askopenfilename(
-        initialdir=initialdir, title=title, filetypes=f_types, multiple=multi
-    )
 
+    root = get_top_root()
+    files = tkinter.filedialog.askopenfilename(
+        initialdir=initialdir, title=title, filetypes=f_types, multiple=multi, parent=root
+    )
+    root.destroy()
     return [files] if len(files) else None
 
 
@@ -129,9 +151,11 @@ def get_files_from_dir(
     """
 
     wd = getcwd()
+    root = get_top_root()
     dir = tkinter.filedialog.askdirectory(
-        title=title, initialdir=initialdir, mustexist=True
+        title=title, initialdir=initialdir, mustexist=True, parent=root
     )
+    root.destroy()
     files = []
     if dir != None:
         chdir(dir)
@@ -173,14 +197,16 @@ def get_save_file_name(
     """
     if not isinstance(f_types, list):
         f_types = [f_types]
+    root = get_top_root()
     file = tkinter.filedialog.asksaveasfilename(
         confirmoverwrite=True,
         initialdir=initialdir,
         title=title,
         defaultextension=ft_standard_save[0][1],
         filetypes=f_types,
+        parent=root
     )
-
+    root.destroy()
     return file if len(file) else None
 
 

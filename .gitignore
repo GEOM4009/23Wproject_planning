@@ -130,6 +130,11 @@ dmypy.json
 
 
 #data folders
+data/*.dbf
+data/*.prj
+data/*.qpj
+data/*.shp
+data/*.shx
 BorderofNunavutRegions/
 GIS_DATA_MAPB_2021DNLUP/
 planningunit_25km/
