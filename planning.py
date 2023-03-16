@@ -36,14 +36,43 @@ def create_planning_unit_grid():
             )
             if selection == 1:
                 # 1 Manual Input
-                hexagon_size = get_user_float(f"Hexagon Size (m{SQ}): ")
+                resolution = get_user_float(f"Enter a Grid Resolution (0-15),\
+                            Edge length for each resolution:\
+                            0(1107km), 1(418km), 2(158km), 3(59.8km),\
+                            4(22.6km), 5(8.54km), 6(3.23km), 7(1.22km),\
+                            8(461m), 9(174m), 10(65.9m), 11(24.9m),\
+                            12(9.41m), 13(3.56m), 14(1.35m),'15(0.509m),: ")
                 grid_size_x = get_user_float("Grid Size X (km): ")
                 grid_size_y = get_user_float("Grid Size Y (km): ")
-                # if utm:
-                # grid_lat = get_user_float("Easting of grid anchor point (dd): ")
-                # grid_lon = get_user_float("Northing of grid anchor point (dd): ")
                 grid_lat = get_user_float("Latitude of grid anchor point (dd): ")
                 grid_lon = get_user_float("Longitude of grid anchor point (dd): ")
+
+                xdiff = grid_size_x/2
+                ydiff = grid_size_y/2
+
+                xmax =  grid_lon + (180/pi)*(xdiff/6378137)/cos(lat0)
+                xmin =  grid_lon - (180/pi)*(xdiff/6378137)/cos(lat0)
+                ymax = grid_lat + (180/pi)*(ydiff/6378137)
+                ymin = grid_lat - (180/pi)*(ydiff/6378137)
+                geo = {'type': 'Polygon',
+                        'coordinates': [
+                            [   [xmin, ymin],
+                                [xmin, ymax],
+                                [xmax, ymax],
+                                [xmax, ymin],
+                                [xmin, ymin]]]}
+
+                hexes = h3.polyfill(geo, resolution)
+                df = pd.DataFrame(list(hexes))
+                df.columns = ['Hex_ID']
+                df['PUID'] = df.index + 1
+                def add_geometry(row):
+                  points = h3.h3_to_geo_boundary(row['Hex_ID'], True)
+                  return Polygon(points)
+
+                df['geometry'] = (df.apply(add_geometry,axis=1))
+                planning_unit_grid = gpd.GeoDataFrame(df, geometry=df['geometry'], crs = "epsg:")
+                planning_unit_grid.to_file('planning_unit_grid.shp')
                 continue
             elif selection == 2:
                 # 2 Interactive
