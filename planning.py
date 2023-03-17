@@ -325,16 +325,18 @@ def select_planning_units(planning_unit_grid: gpd.GeoDataFrame) -> gpd.GeoDataFr
 def load_planning_layers(planning_layers: list) -> list[gpd.GeoDataFrame]:
     """
     Author: Nata
+    
+    Takes user selection to load planning/ conservation layers of interest
 
     Parameters
     ----------
     planning_layers : list
-        DESCRIPTION.
+        Takes a list of planning layers to load.
 
     Returns
     -------
     planning_layers : TYPE
-        DESCRIPTION.
+        returns a geodataframe of the selected planning layers.
 
     """
     # get list of files to load
@@ -350,6 +352,7 @@ def load_planning_layers(planning_layers: list) -> list[gpd.GeoDataFrame]:
         4 View Layers on Map
         9 Return to Main Menu
     >>> """
+    
                 )
             )
         except ValueError:
@@ -357,13 +360,19 @@ def load_planning_layers(planning_layers: list) -> list[gpd.GeoDataFrame]:
 
         if selection == 1:
             # 1 All from Directory
-            continue
+            #Call Mitch's util function to load all files from the selected directory
+            files=get_files_from_dir()
+            for file in files:
+                planning_layers.append(gpd.read_file(file))
+            break
         elif selection == 2:
             # 2 Select Files
+            #Call Mitch's util function to load selected file(s) from user input (popup)
             files = get_files(title="Select planning layer files")
             for file in files:
                 planning_layers.append(gpd.read_file(file))
             break
+            #planning_layers=get_files()
         elif selection == 3:
             # 3 Remove Layers
             continue
@@ -387,16 +396,20 @@ def query_planning_layers(
 ) -> list[gpd.GeoDataFrame]:
     """
     Author: Nata
+    
+    Takes planning layers and user input on conservation features of interest to select by attribute and save new file
+
+NOTE this is not fully functional yet, it keeps returning empty files, but is close to solving!
 
     Parameters
     ----------
     planning_layers : list[gpd.GeoDataFrame]
-        DESCRIPTION.
+        Takes the pre-loaded planning layers file.
 
     Returns
     -------
     TYPE
-        DESCRIPTION.
+        Returns a geodataframe of only the selected conservation features.
 
     """
 
@@ -428,21 +441,88 @@ def query_planning_layers(
         # to get extents from intput, file, or interactive on map, but that
         # may be redundant if we just limits to the bounds of the selected
         # planning units to start with.
+        
+        
+
         except ValueError:
             print_error_msg(msg_value_error)
 
         if selection == 1:
             # 1 ID
+            #then filter by ID
+            #make empty list to fill with the unique values in planning layers ID field, to show user
+            filter=[]
+            #loop through the geodataframes to find and save every unique ID value, save to the filter list
+            for gdf in planning_layers:
+                filter.extend(gdf["ID"].unique())
+            #get user to select ID of interest
+            #NOTE this is currently for selection of single features, but will be expanded to multi later
+            #filterValues is essentially a list with one value for now
+            chosenFeature=get_user_selection(filter)
+            #do the filtering - loop through planning layers, keeping rows that match chosenFeature
+            for i in range(len(filtered_planning_layers)):
+                #filter by checking if the ID value is in the chosenFeature list
+                filtered_planning_layers[i]=filtered_planning_layers[i][filtered_planning_layers[i]["ID"].isin(chosenFeature)]
+                #this does not fully work, it keeps returning an empty list of geodataframes, will solve for the next report
+            
             continue
         elif selection == 2:
             # 2 CLASS_TYPE
+            #then filter by class type
+            #make empty list to fill with the unique values in planning layers CLASS_TYPE field, to show user
+            filter=[]
+            #loop through the geodataframes to find and save every unique CLASS_TYPE value, save to the filter list
+            for gdf in planning_layers:
+                filter.extend(gdf["CLASS_TYPE"].unique())
+            #get user to select class of interest
+            #NOTE this is currently for selection of single features, but will be expanded to multi later
+            #filterValues is essentially a list with one value for now
+            chosenFeature=get_user_selection(filter)
+            #do the filtering - loop through planning layers, keeping rows that match chosenFeature
+            for i in range(len(filtered_planning_layers)):
+                #filter by checking if the CLASS_TYPE value is in the chosenFeature list
+                filtered_planning_layers[i]=filtered_planning_layers[i][filtered_planning_layers[i]["CLASS_TYPE"].isin(chosenFeature)]
+                #this does not fully work, it keeps returning an empty list of geodataframes, will solve for the next report
+ 
             continue
         elif selection == 3:
             # 3 GROUP_
+            #Then filter by group
+            #make empty list to fill with the unique values in planning layers GROUP_ field, to show user
+            filter=[]
+            #loop through the geodataframes to find and save every unique GROUP_ value, save to the filter list
+            for gdf in planning_layers:
+                filter.extend(gdf["GROUP_"].unique())
+            #get user to select GROUP_ of interest
+            #NOTE this is currently for selection of single features, but will be expanded to multi later
+            #filterValues is essentially a list with one value for now
+            chosenFeature=get_user_selection(filter)
+            #do the filtering - loop through planning layers, keeping rows that match chosenFeature
+            for i in range(len(filtered_planning_layers)):
+                #filter by checking if the group value is in the chosenFeature list
+                filtered_planning_layers[i]=filtered_planning_layers[i][filtered_planning_layers[i]["GROUP_"].isin(chosenFeature)]
+                #this does not fully work, it keeps returning an empty list of geodataframes, will solve for the next report
             continue
+        
         elif selection == 4:
             # 3 NAME
-            continue
+            #Then filter by name
+           #make empty list to fill with the unique values in planning layers NAME field, to show user
+           filter=[]
+           #loop through the geodataframes to find and save every unique NAME value, save to the filter list
+           for gdf in planning_layers:
+               filter.extend(gdf["NAME"].unique())
+           #get user to select ID of interest
+           #NOTE this is currently for selection of single features, but will be expanded to multi later
+           #filterValues is essentially a list with one value for now
+           chosenFeature=get_user_selection(filter)
+           #do the filtering - loop through planning layers, keeping rows that match chosenFeature
+           for i in range(len(filtered_planning_layers)):
+               #filter by checking if the name value is in the chosenFeature list
+               filtered_planning_layers[i]=filtered_planning_layers[i][filtered_planning_layers[i]["NAME"].isin(chosenFeature)]
+               #this does not fully work, it keeps returning an empty list of geodataframes, will solve for the next report
+           continue
+       
         elif selection == 9:
             # 9 Return to Main Menu
             break
@@ -627,20 +707,21 @@ def main():
 
     # start the main menu thread
 
+
     def server_thread():
         app.app.run()
         return
 
-    server = threading.Thread(target=server_thread)
+    #server = threading.Thread(target=server_thread)
     main_menu_thread = threading.Thread(target=main_menu)
 
-    server.start()
-    sleep(0.1)
+  #  server.start()
+   # sleep(0.1)
     main_menu_thread.start()
     main_menu_thread.join()
 
-    if server.is_alive():
-        server.join(1.0)
+   # if server.is_alive():
+    #    server.join(1.0)
 
     print("All done!")
 
@@ -652,3 +733,6 @@ if __name__ == "__main__":
         input("\nTESTING COMPLETE")
     else:
         main()
+        
+main()
+3
