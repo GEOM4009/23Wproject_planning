@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Author: Mitch
+defs.py
+
+This file contains general definitions for the planning.py script
+
+@author: Mitch Albert
+
 """
 
 
@@ -19,6 +24,7 @@ ft_all = [ft_any, ft_csv, ft_json, ft_shapefile, ft_geo_package, ft_kml]
 
 # message strings
 msg_value_error = "Please enter a valid integer."
+msg_value_error_float = "Please enter a valid float value."
 SQ = "\u00b2"
 
 # colours
@@ -41,4 +47,4 @@ AREA_X = "AREA_X"
 # other
 URL_INDEX = "http://127.0.0.1:5000/"
 URL_INPUT = "http://127.0.0.1:5000/input"
-SHUTDOWN_URL = "http://127.0.0.1:5000/shutdown"
+URL_SHUTDOWN = "http://127.0.0.1:5000/shutdown"

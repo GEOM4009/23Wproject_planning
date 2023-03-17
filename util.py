@@ -15,7 +15,6 @@ Revision History:
     MA: 2023-02-20: Added get_files_from_dir()
 """
 
-
 from os import getcwd, chdir, path
 import tkinter.filedialog
 from tkinter import Tk, Frame, Listbox, Scrollbar, Button
@@ -25,20 +24,19 @@ from glob import glob
 from defs import *
 
 
-def print_error_msg(msg) -> None:
+def print_error_msg(msg: str) -> None:
     """
     Author: Mitch
+    Prints a message in red to the console to clearly indicate an error.
 
     Parameters
     ----------
-    msg : TYPE
-        DESCRIPTION.
+    msg : str
+        The error message to print.
 
     Returns
     -------
     None
-        DESCRIPTION.
-
     """
     print(f"{RED}{msg}{RST}")
     return
@@ -47,7 +45,8 @@ def print_error_msg(msg) -> None:
 def get_user_float(msg: str) -> float:
     """
     Author: Mitch
-
+    Gets a float from the user. If the user enters a non-float value, the
+    function will continue to prompt the user until a valid float is entered.
     Parameters
     ----------
     msg : str
@@ -69,7 +68,7 @@ def get_user_float(msg: str) -> float:
             )
 
         except ValueError:
-            print_error_msg(msg_value_error)
+            print_error_msg(msg_value_error_float)
             continue
 
 
@@ -104,6 +103,8 @@ def get_file(
     """
     Author: Mitch
     Opens a tkinter file dialog for a user to selelect a single file to load.
+    Uses get_files() to do the heavy lifting, but passes the multi=False to limit
+    the user to selecting a single file.
 
     Parameters
     ----------
@@ -126,7 +127,7 @@ def get_file(
 def get_files(
     f_types: tuple[str, str] | list[tuple[str, str]] = ft_standard,
     title: str = "Select Files To Load",
-    initialdir=getcwd(),
+    initialdir: str = getcwd(),
     multi: bool = True,
 ) -> List[str]:
     """
@@ -139,7 +140,10 @@ def get_files(
         The file type(s) allowed. The default is standard_types.
     title : str, optional
         Title of dialog box. Default is "Select Files To Load".
-
+    initialdir : str, optional
+        The initial directory to open the dialog box in. The default is getcwd().
+    mutli : bool, optional
+        Whether or not to allow multiple file selection. The default is True.
     Returns
     -------
     List[str] | None
@@ -151,7 +155,11 @@ def get_files(
 
     root = get_top_root()
     files = tkinter.filedialog.askopenfilename(
-        initialdir=initialdir, title=title, filetypes=f_types, multiple=multi, parent=root
+        initialdir=initialdir,
+        title=title,
+        filetypes=f_types,
+        multiple=multi,
+        parent=root,
     )
     if not multi:
         files = (files,)
@@ -162,7 +170,7 @@ def get_files(
 def get_files_from_dir(
     f_types: tuple[str, str] | list[tuple[str, str]] = ft_any,
     title: str = "Select Directory To Load Files From",
-    initialdir=getcwd(),
+    initialdir: str = getcwd(),
 ) -> List[str]:
     """
     Author: Mitch
@@ -176,6 +184,8 @@ def get_files_from_dir(
     title : str, optional
         Title of the dialog box. Default is "Select Directory To Load Files
         From".
+    initialdir : str, optional
+        The initial directory to open the dialog box in. The default is getcwd().
 
     Returns
     -------
@@ -187,7 +197,9 @@ def get_files_from_dir(
 
     wd = getcwd()
     root = get_top_root()
-    dir = tkinter.filedialog.askdirectory(title=title, initialdir=initialdir, mustexist=True, parent=root)
+    dir = tkinter.filedialog.askdirectory(
+        title=title, initialdir=initialdir, mustexist=True, parent=root
+    )
     root.destroy()
     files = []
     if dir != None:
@@ -210,7 +222,7 @@ def get_files_from_dir(
 def get_save_file_name(
     f_types: tuple[str, str] | list[tuple[str, str]] = ft_standard_save,
     title: str = "Save File",
-    initialdir=getcwd(),
+    initialdir: str = getcwd(),
 ) -> str:
     """
     Author: Mitch
@@ -223,6 +235,8 @@ def get_save_file_name(
         The file type(s) allowed. The default is standard_types.
     title : str, optional
         Title of dialog box. Default is "Save File".
+    initialdir : str, optional
+        The initial directory to open the dialog box in. The default is getcwd().
 
     Returns
     -------
@@ -260,13 +274,19 @@ def get_user_selection(
     Parameters
     ----------
     item_list : list[str]
-        The list of strings representing the items to select from.
+        The list representing the items to select from.
     multi : bool, optional
         Determines whether multiple selections are allowed or not. The default
         is False.
     title : str, optional
         The title of the Tkinter window. The default is "Please Make A
         Selection".
+    x : int, optional
+        The width of the Tkinter window. The default is 400.
+    y : int, optional
+        The height of the Tkinter window. The default is 600.
+    bg : str, optional
+        The background color of the Tkinter window. The default is "#5ea5c9".
 
     Returns
     -------

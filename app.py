@@ -1,5 +1,10 @@
 """
-Author: Mitch
+app.py
+
+This file contains the flask webserver that is used to get user input from the map.
+
+@author: Mitch Albert
+
 """
 
 from flask import Flask, request, render_template_string
@@ -32,20 +37,23 @@ def get_input_from_map(layers: list[gpd.GeoDataFrame] = [], title: str = user_ti
     """
     Author: Mitch
     Get user input from folium map hosted on flask webserver.
+    Create a folium map with the given layers and the draw plugin enabled.
+    opens a webbrowser to the map and waits for user input.
+    Once data is received, the map is closed and the data is returned.
     No options enabled yet other than adding vector layers to the map
-    and changing the title
+    and changing the title.
 
     Parameters
     ----------
     layers : list[gpd.GeoDataFrame], optional
-        DESCRIPTION. The default is [].
+        The list of layers to add to the map. The default is [].
     title : str, optional
-        DESCRIPTION. The default is user_title.
+        The h1 header displayed above the map. The default is user_title.
 
     Returns
     -------
     any
-        DESCRIPTION.
+        Drawing data recieved via user input on the map.
 
     """
 
@@ -193,7 +201,7 @@ def shutdown_server():
     func()
 
 
-@app.route("/shutdown", methods=["POST"])
+@app.route("/shutdown", methods=["GET"])
 def shutdown():
     """
     Author: Mitch
