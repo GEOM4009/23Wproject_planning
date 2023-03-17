@@ -31,16 +31,20 @@ verbose = True
 def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
     """
     Author: Lucas
-
+    This function will take user input to create a hexagonal planning
+    grid that is defined by a central coordinate, cell resolution,
+    and grid height and width. A unique Planning unit ID is then given
+    to each hexagon and the final grid can be output to a shapefile.
     Parameters
     ----------
-    planning_unit_grid : TYPE
-        DESCRIPTION.
+    planning_unit_grid : gpd.geodataframe
+        if a previuos hexagonal grid has been created it can be input
+        to skip the creation of a new grid
 
     Returns
     -------
     TYPE
-        DESCRIPTION.
+        Description
 
     """
 
@@ -64,6 +68,11 @@ def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
 
         if selection == 1:
             # 1 Manual Input
+            #This will be the primary method of input as it requires
+            #the least amount of prerequisite data
+            #The inputs below will get the information needed to
+            #create a boundary for the hexagon to be creaetd in as
+            #well as define the hexagon cell size
             resolution = get_user_float(
                 """
     Enter a Grid Resolution (0-15),
@@ -77,7 +86,8 @@ def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
             grid_size_y = get_user_float("Grid Size Y (km): ")
             grid_lat = get_user_float("Latitude of grid anchor point (dd): ")
             grid_lon = get_user_float("Longitude of grid anchor point (dd): ")
-
+            #Half of the grid width and height can be added to the central
+            #coordinate to create a study area that meets the criteria
             xdiff = grid_size_x / 2
             ydiff = grid_size_y / 2
 
@@ -85,22 +95,32 @@ def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
             xmin = grid_lon - (180 / pi) * (xdiff / 6378137) / cos(grid_lat)
             ymax = grid_lat + (180 / pi) * (ydiff / 6378137)
             ymin = grid_lat - (180 / pi) * (ydiff / 6378137)
+            #dictionary is created that contains the boundary points above to define a polygon
             geo = {
                 "type": "Polygon",
                 "coordinates": [[[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin], [xmin, ymin]]],
             }
-
+            #Hexagonal grid is iterated through the study region file, with
+            #resolution used to define the grid cell size
             hexes = h3.polyfill(geo, resolution)
+            #data frame is created that contains the set of hexagon
+            #cell ids obtained above
             df = pd.DataFrame(list(hexes))
+            #Column renamed from 0 to Hex ID
             df.columns = ["Hex_ID"]
+            #unique PUID is assigned to each hexagon
             df["PUID"] = df.index + 1
-
+#           #function is defined that converts the Hex ID into a hexagon geometry
             def add_geometry(row):
                 points = h3.h3_to_geo_boundary(row["Hex_ID"], True)
                 return Polygon(points)
-
+            #function above is used to create the geometry column
             df["geometry"] = df.apply(add_geometry, axis=1)
+            #df is turned into a geodataframe with the geometry column as the geometry
+            #The CRS used is albers equal area as that is the one the client uses
+            #In the future the CRS will be defined by user input
             planning_unit_grid = gpd.GeoDataFrame(df, geometry=df["geometry"], crs="epsg:9822")
+#           #final planning grid is exported to shapefile so it can be reused in the future
             planning_unit_grid.to_file("planning_unit_grid.shp")
             break
         elif selection == 2:
