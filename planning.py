@@ -701,22 +701,72 @@ def calculate_overlap(
 
 def validate_crs(crs: any, target_crs: str) -> bool:
     """
-    Author: Winaa
-
-    Parameters
-    ----------
+    Author: Winna
+    Utility function to validate a Coordinate Reference System (CRS) and either correct it or inform users of the mismatch.
+    
+    Parameters:
+    -----------
     crs : any
-        DESCRIPTION.
+        The CRS to be validated. This can be in any format, such as a string or a dictionary.
     target_crs : str
-        DESCRIPTION.
+        The target CRS that the input CRS should match.
 
-    Returns
-    -------
+    Returns:
+    --------
     bool
-        DESCRIPTION.
-
+        Returns True if the input CRS matches the target CRS, False otherwise.
     """
-    return
+    if isinstance(crs, str):
+        # If crs is a string, check if it matches the target CRS
+        if crs == target_crs:
+            return True
+        else:
+            # If it doesn't match, prompt the user to either correct it or fail
+            user_input = input(f"The CRS '{crs}' does not match the target CRS '{target_crs}'. Would you like to correct it? [y/n]: ")
+            if user_input.lower() == 'y':
+                # If the user wants to correct it, prompt for the correct CRS and check if it matches the target CRS
+                corrected_crs = input("Enter the corrected CRS: ")
+                if corrected_crs == target_crs:
+                    return True
+                else:
+                    print(f"The corrected CRS '{corrected_crs}' does not match the target CRS '{target_crs}'. Validation failed.")
+                    return False
+            else:
+                # If the user doesn't want to correct it, fail the validation
+                print("Validation failed.")
+                return False
+    elif isinstance(crs, dict):
+        # If crs is a dictionary, check if it has a 'crs' key and if its value matches the target CRS
+        if 'crs' in crs:
+            if crs['crs'] == target_crs:
+                return True
+            else:
+                # If it doesn't match, prompt the user to either correct it or fail
+                user_input = input(f"The CRS '{crs['crs']}' does not match the target CRS '{target_crs}'. Would you like to correct it? [y/n]: ")
+                if user_input.lower() == 'y':
+                    # If the user wants to correct it, prompt for the correct CRS and check if it matches the target CRS
+                    corrected_crs = input("Enter the corrected CRS: ")
+                    if corrected_crs == target_crs:
+                        crs['crs'] = corrected_crs
+                        return True
+                    else:
+                        print(f"The corrected CRS '{corrected_crs}' does not match the target CRS '{target_crs}'. Validation failed.")
+                        return False
+                else:
+                    # If the user doesn't want to correct it, fail the validation
+                    print("Validation failed.")
+                    return False
+        else:
+            # If the dictionary doesn't have a 'crs' key, prompt the user to either correct it or fail
+            user_input = input("The input dictionary does not have a 'crs' key. Would you like to add it and enter a CRS? [y/n]: ")
+            if user_input.lower() == 'y':
+                # If the user wants to add a 'crs' key, prompt for the CRS and check if it matches the target CRS
+                corrected_crs = input("Enter the CRS: ")
+                if corrected_crs == target_crs:
+                    crs['crs'] = corrected_crs
+                    return True
+                else:
+                    print(f"The entered CRS '{corrected_crs}' does not match the target CRS '{target_crs}'. Validation failed.")
 
 
 def plot_layers(
