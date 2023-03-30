@@ -42,6 +42,7 @@ from multiprocessing import Pool
 import numpy as np
 import psutil
 from functools import partial
+import pyproj
 
 
 # Global Variables
@@ -51,6 +52,43 @@ CORES = psutil.cpu_count(logical=False)
 target_crs = ""
 rectangular_grid = False
 
+
+
+# %% Obtain the CRS from the user 
+
+def crs():
+    """
+    
+
+    Returns
+    -------
+    None.
+
+    """
+    
+    
+    # Ask user for CRS
+    crs = input("Enter CRS: ")
+
+    if crs == "Albers Equal Area":
+    # Get inputs from user
+        lat_1 = float(input("Enter Latitude of the first standard parallel: "))
+        lat_2 = float(input("Enter Latitude of the second standard parallel: "))
+        lon_0 = float(input("Enter Longitude of the central meridian: "))
+        lat_0 = float(input("Enter Latitude of the projection origin: "))
+
+    # Create CRS
+    target_crs = pyproj.Proj(
+        "+proj=aea +lat_1={} +lat_2={} +lon_0={} +lat_0={} +datum=WGS84 +units=m +no_defs".format(
+            lat_1, lat_2, lon_0, lat_0
+        )
+    )
+    else:
+        # Use the input CRS
+        target_crs = pyproj.Proj(crs)
+    
+    
+    
 
 # %% create a planning unit grid
 def create_hexagon(l, x, y):
