@@ -1,30 +1,56 @@
 # -*- coding: utf-8 -*-
 """
+planning.py
+Authors: Mitch, Lucas, Ethan, Nata, Winaa
+
+This file contains the main script for the GEOM4009 planning project.
+It contains the main menu and all the functions for the different the
+different steps of the data and planning process.
+
+NOTE: This script must be run in the geom4009 environment, but will require
+      the installation of the following additional packages:
+
+    conda install -c anaconda flask  --> this will be removed in the future
+    conda install -c conda-forge tk  --> provides the tkinter GUI
+
+TODO: Get user input to set CRS for the project
+TODO: Confirm with client if there will be any use case for an argument parser
+TODO: Add additional error handling for the different functions
+
 """
 # Import modules
 from util import *
 from defs import *
-import argparse
 import os
 
-import threading
+os.environ["USE_PYGEOS"] = "0"
 import app
-from time import sleep
+from time import time
 
 from shapely.geometry import Polygon
 import shapely
 from math import pi, cos, sqrt
 import math
 
-
-os.environ["USE_PYGEOS"] = "0"
 import geopandas as gpd
 import pandas as pd
+import matplotlib.pyplot as plt
+
+from tqdm import tqdm
+from multiprocessing import Pool
+
+import numpy as np
+import psutil
+from functools import partial
 
 
 # Global Variables
 run_tests = False
 verbose = True
+CORES = psutil.cpu_count(logical=False)
+target_crs = ""
+rectangular_grid = False
+
 
 # %% create a planning unit grid
 def create_hexagon(l, x, y):
@@ -37,8 +63,12 @@ def create_hexagon(l, x, y):
     :return: The polygon containing the hexagon's coordinates
     Source:https://gis.stackexchange.com/questions/341218/creating-a-hexagonal-grid-of-regular-hexagons-of-definite-area-anywhere-on-the-g
     """
-    c = [[x + math.cos(math.radians(angle)) * l, y + math.sin(math.radians(angle)) * l] for angle in range(0, 360, 60)]
+    c = [
+        [x + math.cos(math.radians(angle)) * l, y + math.sin(math.radians(angle)) * l]
+        for angle in range(0, 360, 60)
+    ]
     return Polygon(c)
+
 
 def create_hexgrid(bbx, side):
     """
@@ -57,7 +87,7 @@ def create_hexgrid(bbx, side):
     x_max = max(bbx[0], bbx[2])
     y_min = min(bbx[1], bbx[3])
     y_max = max(bbx[1], bbx[3])
-   
+
     h_skip = math.ceil(x_min / h_step) - 1
     h_start = h_skip * h_step
 
@@ -87,6 +117,7 @@ def create_hexgrid(bbx, side):
 
     return grid
 
+
 def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
     """
     Author: Lucas
@@ -96,7 +127,7 @@ def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
     to each hexagon and the final grid can be output to a shapefile.
     It can also create this grid using other methods, such as taking a
     shapefile as input, the CRS and the bounds of that file will be
-    determined and used to create the planning grid. Additionally a 
+    determined and used to create the planning grid. Additionally a
     previously created grid can be input by the user
     Parameters
     ----------
@@ -104,7 +135,7 @@ def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
         if a previuos hexagonal grid has been created it can be input
         to skip the creation of a new grid
     Area: float
-        Size of grid cell that the user will use, the units will be 
+        Size of grid cell that the user will use, the units will be
         the same units as the CRS that the user specifies
     grid_size_x: float
         width of the grid
@@ -129,31 +160,68 @@ def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
                 input(
                     """
     Create Planning Unit Grid
-        1 Manual Input
-        2 Interactive
-        3 Grid from File
-        4 Extents from File
-        5 View on Map
+        1 Create Grid from Shape File extents
+        2 Load existing Grid from File
+        3 Create Grid from User Input
         9 Return to Main Menu
     >>> """
                 )
             )
         except ValueError:
-            print_error_msg(msg_value_error)
+            print_warning_msg(msg_value_error)
+            continue
 
+        # 1 Create Grid from Shape File extents
         if selection == 1:
-            # 1 Manual Input
-            #The inputs below will get the information needed to
-            #create a boundary that will be filled with the hexagons as
-            #well as define the hexagon cell size
+            file = get_file(title="Select a file to load the extents from")
+            Area = get_user_float("Grid Cell Area (Meters Squared):")
+            Prj = file.crs
+            box = file.total_bounds
+
+            edge = math.sqrt(Area**2 / (3 / 2 * math.sqrt(3)))
+            hex_centers = create_hexgrid(box, edge)
+            hex_centers
+            hexagons = []
+            for center in hex_centers:
+                hexagons.append(create_hexagon(edge, center[0], center[1]))
+            planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=Prj)
+
+            planning_unit_grid["PUID"] = planning_unit_grid.index + 1
+            planning_unit_grid.to_file("planning_unit_grid.shp")
+            break
+
+        # 2 Load existing Grid from File
+        elif selection == 2:
+            file = get_file(title="Select a file to load the grid from")
+            if file:
+                planning_unit_grid = load_files(file, verbose)
+                # TODO: This is a hack to get the global target_crs, should enable
+                #      an option to do it this way or ask the user which crs to use.
+                #      This crs should checked to see if it is projected or not.
+                global target_crs
+                target_crs = planning_unit_grid.crs
+                if verbose:
+                    print_info(
+                        f"Hex area: {round(planning_unit_grid.geometry.area[0])}"
+                    )
+            else:
+                print_warning_msg("No file loaded, please try again.")
+                continue
+            break
+
+        # 3 Create Grid from User Input
+        elif selection == 3:
+            # The inputs below will get the information needed to
+            # create a boundary that will be filled with the hexagons as
+            # well as define the hexagon cell size
             Area = get_user_float("Grid Cell Area (Meters Squared):")
             grid_size_x = get_user_float("Grid Size X (m): ")
             grid_size_y = get_user_float("Grid Size Y (m): ")
             grid_lat = get_user_float("Latitude of grid anchor point (dd): ")
             grid_lon = get_user_float("Longitude of grid anchor point (dd): ")
             Prj = get_user_float("Enter CRS code: ")
-            #Half of the grid width and height can be added to the central
-            #coordinate to create a study area that meets the criteria
+            # Half of the grid width and height can be added to the central
+            # coordinate to create a study area that meets the criteria
             xdiff = grid_size_x / 2
             ydiff = grid_size_y / 2
 
@@ -161,250 +229,163 @@ def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
             xmin = grid_lon - (180 / pi) * (xdiff / 6378137) / cos(grid_lat)
             ymax = grid_lat + (180 / pi) * (ydiff / 6378137)
             ymin = grid_lat - (180 / pi) * (ydiff / 6378137)
-            area = "POLYGON(({0} {1}, {0} {3}, {2} {3}, {2} {1}, {0} {1}))".format(xmin, ymin, xmax, ymax)
+            area = "POLYGON(({0} {1}, {0} {3}, {2} {3}, {2} {1}, {0} {1}))".format(
+                xmin, ymin, xmax, ymax
+            )
             area_shply = shapely.wkt.loads(area)
             area_geos = gpd.GeoSeries(area_shply)
             box = area_geos.total_bounds
-            edge = math.sqrt(Area**2/(3/2 * math.sqrt(3)))
+            edge = math.sqrt(Area**2 / (3 / 2 * math.sqrt(3)))
             hex_centers = create_hexgrid(box, edge)
             hex_centers
             hexagons = []
             for center in hex_centers:
                 hexagons.append(create_hexagon(edge, center[0], center[1]))
-                
-            planning_unit_grid = gpd.GeoDataFrame(geometry = hexagons, crs = Prj)
-            #unique PUID is assigned to each hexagon
-            planning_unit_grid["PUID"] = planning_unit_grid.index + 1
-            planning_unit_grid.to_file("planning_unit_grid.shp")
-            break
-        elif selection == 2:
-            # 2 Interactive
-            print(app.get_input_from_map())
-            continue
-        elif selection == 3:
-            # 3 Grid from File
-            file = get_file(title="Select a file to load the grid from")
-            print(file)
-            planning_unit_grid = gpd.read_file(file)
-            break
-        elif selection == 4:
-            # 4 Extents from File
-            file = get_file(title="Select a file to load the extents from")
-            Area = get_user_float("Grid Cell Area (Meters Squared):")
-            Prj = file.crs
-            box = file.total_bounds
-            
-            edge = math.sqrt(Area**2/(3/2 * math.sqrt(3)))
-            hex_centers = create_hexgrid(box, edge)
-            hex_centers
-            hexagons = []
-            for center in hex_centers:
-                hexagons.append(create_hexagon(edge, center[0], center[1]))
-            planning_unit_grid = gpd.GeoDataFrame(geometry = hexagons, crs = Prj)
-            
-            planning_unit_grid["PUID"] = planning_unit_grid.index + 1
-            planning_unit_grid.to_file("planning_unit_grid.shp")
 
-            continue
-        elif selection == 5:
-            # 5 View on Map
-            continue
+            planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=Prj)
+            # unique PUID is assigned to each hexagon
+            planning_unit_grid["PUID"] = planning_unit_grid.index + 1
+            planning_unit_grid.to_file("planning_unit_grid.shp")
+            break
+
+        # 9 Return to Main Menu
         elif selection == 9:
-            # 9 Return to Main Menu
             break
         else:
-            print_error_msg(msg_value_error)
+            print_warning_msg(msg_value_error)
             continue
     return planning_unit_grid
 
 
 # %% Select planning units
 
-# def select_planning_units():
-#     # ask for input()
-#     extent_str = input("Enter extents as xmin ymin xmax ymax: ")
-#     extent = list(map(float, extent_str.split()))
+# def select_planning_units(planning_unit_grid: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+#     """
+#     Author: Ethan
 
-#     poly = gpd.GeoSeries([{
-#         'type': 'Polygon',
-#         'coordinates': [[
-#             [extent[0], extent[1]],
-#             [extent[2], extent[1]],
-#             [extent[2], extent[3]],
-#             [extent[0], extent[3]],
-#             [extent[0], extent[1]]
-#         ]]
-#     }], crs='epsg:4326')
-#     selected_hexagons = hexagons[hexagons.intersects(poly[0])]
+#     Parameters
+#     ----------
+#     planning_unit_grid : gpd.GeoDataFrame
+#         DESCRIPTION.
 
+#     Returns
+#     -------
+#     TYPE
+#         DESCRIPTION.
 
-#     userPUID = input("What is the PUID? Type the PUID's and put a space between each one':")
-#     selected_hexagons = hexagons[hexagons.PUID.isin(puids.split(','))]
+#     """
 
+#     filtered_planning_unit_grid = planning_unit_grid.copy(deep=True)
 
-#     userShapefile = input("What is the path to the Shapefile?:")
+#     if planning_unit_grid.empty:
+#         print_warning_msg("No planning unit grid loaded.")
+#         return planning_unit_grid
 
-#     # Find intersecting hexagons
-#     selected_poly = gpd.read_file(userShapefile)
-#     selected_hexagons = hexagons[hexagons.intersects(selected_poly.geometry.unary_union)]
+#     while True:
+#         try:
+#             selection = int(
+#                 input(
+#                     """
+#     Select Planning Units
+#         1 Manual Input
+#         2 Interactive
+#         3 Extents from File
+#         9 Return to Main Menu
+#     >>> """
+#                 )
+#             )
+#         except ValueError:
+#             print_warning_msg(msg_value_error)
 
-#     userGUID = input("What is the GUID?:")
+#         if selection == 1:
+#             # 1 Manual Input
+#             while True:
+#                 try:
+#                     selection = int(
+#                         input(
+#                             """
+#     Select Planning Units Manual Input Menu
+#         1 Extents
+#         2 PUIDS
+#         3 Extents from File
+#         9 Return to Select Planning Units Menu
+#     >>> """
+#                         )
+#                     )
+#                 except ValueError:
+#                     print_warning_msg(msg_value_error)
 
-#     selected_poly = gpd.GeoDataFrame(geometry=[hexagons.unary_union])
-#     selected_poly.plot()
-#     plt.show()
-#     selected_hexagons = hexagons[hexagons.intersects(selected_poly.geometry.unary_union)]
+#                 if selection == 1:
+#                     # 1 Extents
+#                     extent_str = input("Enter extents as xmin ymin xmax ymax: ")
+#                     extent = list(map(float, extent_str.split()))
 
-#     # Create new filtered gpd containing hexagons from selection
-#     filtered_gpd = selected_hexagons.copy()
+#                     poly = gpd.GeoSeries([{
+#                         'type': 'Polygon',
+#                         'coordinates': [[
+#                             [extent[0], extent[1]],
+#                             [extent[2], extent[1]],
+#                             [extent[2], extent[3]],
+#                             [extent[0], extent[3]],
+#                             [extent[0], extent[1]]
+#                         ]]
+#                     }], crs='epsg:4326')
+#                     selected_hexagons = filtered_planning_unit_grid[hexagons.intersects(poly[0])]
+#                     break
+#                 elif selection == 2:
+#                     # 2 PUIDS
+#                     userPUID = input("What is the PUID? Type the PUID's and put a space between each one':")
+#                     selected_hexagons = hexagons[hexagons.PUID.isin(puids.split(','))]
+#                     break
+#                 elif selection == 3:
+#                     # 3 Extents from File
+#                     userShapefile = input("What is the path to the Shapefile?:")
+#                     # Find intersecting hexagons
+#                     selected_poly = gpd.read_file(userShapefile)
+#                     selected_hexagons = hexagons[hexagons.intersects(selected_poly.geometry.unary_union)]
+#                     break
 
-# # Optionally display the result of the hexagons within the area of interest.
-#     if input_type == "extents" or input_type == "shapefile" or input_type == "GUI":
-#         filtered_gpd.plot()
-#         plt.show()
+#                 elif selection == 9:
+#                     # 9 Return to Main Menu
+#                     break
+#                 else:
+#                     print_warning_msg(msg_value_error)
+#                     continue
 
-#     # 1 Interactive map
-#     # 2 csv #do we want gui for this, easily done with Tkinter
-#     # 3 shp/gpgk file #do we want gui for this, easily done with Tkinter
-#     # 4 User Input
-#         # if 1:
-#         #     #display map with planning units and get input from user
-#         # elif 2:
-#         #     # read in csv of puids
-#         # elif 3:
-#         #     # read in and determine overlaps to generate list
-#         # elif 4:
-#             # ask user to enter puids (loop, or space seperated list)
-#         #validate
-#         # return puid_list
-#     return
+#         elif selection == 2:
+#             # 2 Interactive
+#             continue
+#         elif selection == 3:
+#             # 3 Grid from File
+#             continue
+#         elif selection == 9:
+#             # 9 Return to Main Menu
+#             break
+#         else:
+#             print_warning_msg(msg_value_error)
+#             continue
 
-
-def select_planning_units(planning_unit_grid: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    """
-    Author: Ethan
-
-    Parameters
-    ----------
-    planning_unit_grid : gpd.GeoDataFrame
-        DESCRIPTION.
-
-    Returns
-    -------
-    TYPE
-        DESCRIPTION.
-
-    """
-
-    filtered_planning_unit_grid = planning_unit_grid.copy(deep=True)
-
-    if planning_unit_grid.empty:
-        print_error_msg("No planning unit grid loaded.")
-        return planning_unit_grid
-
-    while True:
-        try:
-            selection = int(
-                input(
-                    """
-    Select Planning Units
-        1 Manual Input
-        2 Interactive
-        3 Extents from File
-        9 Return to Main Menu
-    >>> """
-                )
-            )
-        except ValueError:
-            print_error_msg(msg_value_error)
-
-        if selection == 1:
-            # 1 Manual Input
-            while True:
-                try:
-                    selection = int(
-                        input(
-                            """
-    Select Planning Units Manual Input Menu
-        1 Extents
-        2 PUIDS
-        3 Extents from File
-        9 Return to Select Planning Units Menu
-    >>> """
-                        )
-                    )
-                except ValueError:
-                    print_error_msg(msg_value_error)
-
-                if selection == 1:
-                    # 1 Extents
-                    extent_str = input("Enter extents as xmin ymin xmax ymax: ")
-                    extent = list(map(float, extent_str.split()))
-
-                    poly = gpd.GeoSeries([{
-                        'type': 'Polygon',
-                        'coordinates': [[
-                            [extent[0], extent[1]],
-                            [extent[2], extent[1]],
-                            [extent[2], extent[3]],
-                            [extent[0], extent[3]],
-                            [extent[0], extent[1]]
-                        ]]
-                    }], crs='epsg:4326')
-                    selected_hexagons = filtered_planning_unit_grid[hexagons.intersects(poly[0])]
-                    break
-                elif selection == 2:
-                    # 2 PUIDS
-                    userPUID = input("What is the PUID? Type the PUID's and put a space between each one':")
-                    selected_hexagons = hexagons[hexagons.PUID.isin(puids.split(','))]
-                    break
-                elif selection == 3:
-                    # 3 Extents from File
-                    userShapefile = input("What is the path to the Shapefile?:")
-                    # Find intersecting hexagons
-                    selected_poly = gpd.read_file(userShapefile)
-                    selected_hexagons = hexagons[hexagons.intersects(selected_poly.geometry.unary_union)]
-                    break
-                
-                elif selection == 9:
-                    # 9 Return to Main Menu
-                    break
-                else:
-                    print_error_msg(msg_value_error)
-                    continue
-
-        elif selection == 2:
-            # 2 Interactive
-            continue
-        elif selection == 3:
-            # 3 Grid from File
-            continue
-        elif selection == 9:
-            # 9 Return to Main Menu
-            break
-        else:
-            print_error_msg(msg_value_error)
-            continue
-
-    return filtered_planning_unit_grid
+#     return filtered_planning_unit_grid
 
 
 # %% Load planning layers from file
 
 
-def load_planning_layers(planning_layers: list) -> list[gpd.GeoDataFrame]:
+def load_convservation_layers(conserv_layers: list) -> list[gpd.GeoDataFrame]:
     """
     Author: Nata
 
+    Takes user selection to load planning/ conservation layers of interest
+
     Parameters
     ----------
-    planning_layers : list
-        DESCRIPTION.
+    conserv_layers : list
+        Takes a list of planning layers to load.
 
     Returns
     -------
-    planning_layers : TYPE
-        DESCRIPTION.
+    conserv_layers : list[gpd.GeoDataFrame]
+        returns a geodataframe of the selected planning layers.
 
     """
     # get list of files to load
@@ -414,71 +395,87 @@ def load_planning_layers(planning_layers: list) -> list[gpd.GeoDataFrame]:
                 input(
                     """
     Load Planning Layers
-        1 All from Directory
-        2 Select Files
-        3 Remove Layers
-        4 View Layers on Map
+        1 Select Files
+        2 All from Directory
         9 Return to Main Menu
     >>> """
                 )
             )
         except ValueError:
-            print_error_msg(msg_value_error)
+            print_warning_msg(msg_value_error)
+            continue
 
+        # 1 Select Files
         if selection == 1:
-            # 1 All from Directory
-            continue
-        elif selection == 2:
-            # 2 Select Files
             files = get_files(title="Select planning layer files")
-            for file in files:
-                planning_layers.append(gpd.read_file(file))
+            if files:
+                conserv_layers = load_files(files, verbose)
+            else:
+                print_warning_msg(
+                    "No files loaded from directory, please verify files and try again."
+                )
+                continue
             break
-        elif selection == 3:
-            # 3 Remove Layers
-            continue
-        elif selection == 4:
-            # 4 View layers on Map
-            continue
+
+        # 2 All from Directory
+        elif selection == 2:
+            files = get_files_from_dir()
+            if files:
+                conserv_layers = load_files(files, verbose)
+            else:
+                print_warning_msg(
+                    "No files loaded from directory, try selecting files manually."
+                )
+                continue
+            break
+
+        # 9 Return to Main Menu
         elif selection == 9:
-            # 9 Return to Main Menu
             break
         else:
-            print_error_msg(msg_value_error)
+            print_warning_msg(msg_value_error)
             continue
-    return planning_layers
+    # TODO - add projection to target CRS once target CRS is setup properly
+    # projected_layers = []
+    # for layer in conserv_layers:
+    #     projected_layers.append(layer.to_crs(target_crs))
+    return conserv_layers
 
 
 # %% Filter for specific conservation features
 
 
-def query_planning_layers(
-    planning_layers: list[gpd.GeoDataFrame],
+def query_conservation_layers(
+    conserv_layers: list[gpd.GeoDataFrame],
 ) -> list[gpd.GeoDataFrame]:
     """
-    Author: Nata
+        Author: Nata
 
-    Parameters
-    ----------
-    planning_layers : list[gpd.GeoDataFrame]
-        DESCRIPTION.
+        Takes planning layers and user input on conservation features of interest to select by attribute and save new file
 
-    Returns
-    -------
-    TYPE
-        DESCRIPTION.
+    NOTE this is not fully functional yet, it keeps returning empty files, but is close to solving!
+
+        Parameters
+        ----------
+        conserv_layers : list[gpd.GeoDataFrame]
+            Takes the pre-loaded planning layers file.
+
+        Returns
+        -------
+        TYPE
+            Returns a geodataframe of only the selected conservation features.
 
     """
 
-    filtered_planning_layers = []
+    filtered_conserv_layers = []
 
-    if not len(planning_layers):
-        print_error_msg("No planning layers loaded.")
+    if not len(conserv_layers):
+        print_warning_msg("No planning layers loaded.")
         return []
 
-    filtered_planning_layers = []
-    for layer in planning_layers:
-        filtered_planning_layers.append(layer.copy(deep=True))
+    filtered_conserv_layers = []
+    for layer in conserv_layers:
+        filtered_conserv_layers.append(layer.copy(deep=True))
 
     while True:
         try:
@@ -498,90 +495,206 @@ def query_planning_layers(
         # to get extents from intput, file, or interactive on map, but that
         # may be redundant if we just limits to the bounds of the selected
         # planning units to start with.
+
         except ValueError:
-            print_error_msg(msg_value_error)
+            print_warning_msg(msg_value_error)
+            continue
 
         if selection == 1:
             # 1 ID
+            # then filter by ID
+            # make empty list to fill with the unique values in planning layers ID field, to show user
+            filter = []
+            # loop through the geodataframes to find and save every unique ID value, save to the filter list
+            for gdf in conserv_layers:
+                filter.extend(gdf["ID"].unique())
+            # get user to select ID of interest
+            # NOTE this is currently for selection of single features, but will be expanded to multi later
+            # filterValues is essentially a list with one value for now
+            chosenFeature = get_user_selection(filter)
+            # do the filtering - loop through planning layers, keeping rows that match chosenFeature
+            for i in range(len(filtered_conserv_layers)):
+                # filter by checking if the ID value is in the chosenFeature list
+                filtered_conserv_layers[i] = filtered_conserv_layers[i][
+                    filtered_conserv_layers[i]["ID"].isin(chosenFeature)
+                ]
+                # this does not fully work, it keeps returning an empty list of geodataframes, will solve for the next report
+
             continue
         elif selection == 2:
             # 2 CLASS_TYPE
+            # then filter by class type
+            # make empty list to fill with the unique values in planning layers CLASS_TYPE field, to show user
+            filter = []
+            # loop through the geodataframes to find and save every unique CLASS_TYPE value, save to the filter list
+            for gdf in conserv_layers:
+                filter.extend(gdf["CLASS_TYPE"].unique())
+            # get user to select class of interest
+            # NOTE this is currently for selection of single features, but will be expanded to multi later
+            # filterValues is essentially a list with one value for now
+            chosenFeature = get_user_selection(filter)
+            # do the filtering - loop through planning layers, keeping rows that match chosenFeature
+            for i in range(len(filtered_conserv_layers)):
+                # filter by checking if the CLASS_TYPE value is in the chosenFeature list
+                filtered_conserv_layers[i] = filtered_conserv_layers[i][
+                    filtered_conserv_layers[i]["CLASS_TYPE"].isin(chosenFeature)
+                ]
+                # this does not fully work, it keeps returning an empty list of geodataframes, will solve for the next report
+
             continue
         elif selection == 3:
             # 3 GROUP_
+            # Then filter by group
+            # make empty list to fill with the unique values in planning layers GROUP_ field, to show user
+            filter = []
+            # loop through the geodataframes to find and save every unique GROUP_ value, save to the filter list
+            for gdf in conserv_layers:
+                filter.extend(gdf["GROUP_"].unique())
+            # get user to select GROUP_ of interest
+            # NOTE this is currently for selection of single features, but will be expanded to multi later
+            # filterValues is essentially a list with one value for now
+            chosenFeature = get_user_selection(filter)
+            # do the filtering - loop through planning layers, keeping rows that match chosenFeature
+            for i in range(len(filtered_conserv_layers)):
+                # filter by checking if the group value is in the chosenFeature list
+                filtered_conserv_layers[i] = filtered_conserv_layers[i][
+                    filtered_conserv_layers[i]["GROUP_"].isin(chosenFeature)
+                ]
+                # this does not fully work, it keeps returning an empty list of geodataframes, will solve for the next report
             continue
+
         elif selection == 4:
             # 3 NAME
+            # Then filter by name
+            # make empty list to fill with the unique values in planning layers NAME field, to show user
+            filter = []
+            # loop through the geodataframes to find and save every unique NAME value, save to the filter list
+            for gdf in conserv_layers:
+                filter.extend(gdf["NAME"].unique())
+            # get user to select ID of interest
+            # NOTE this is currently for selection of single features, but will be expanded to multi later
+            # filterValues is essentially a list with one value for now
+            chosenFeature = get_user_selection(filter)
+            # do the filtering - loop through planning layers, keeping rows that match chosenFeature
+            for i in range(len(filtered_conserv_layers)):
+                # filter by checking if the name value is in the chosenFeature list
+                filtered_conserv_layers[i] = filtered_conserv_layers[i][
+                    filtered_conserv_layers[i]["NAME"].isin(chosenFeature)
+                ]
+                # this does not fully work, it keeps returning an empty list of geodataframes, will solve for the next report
             continue
+
         elif selection == 9:
             # 9 Return to Main Menu
             break
         else:
-            print_error_msg(msg_value_error)
+            print_warning_msg(msg_value_error)
             continue
 
-    return filtered_planning_layers
+    return filtered_conserv_layers
 
 
 # %% Calculate planning unit / conservation feature overlap
 
 
-def calc_overlap(planning_grid: gpd.GeoDataFrame, cons_layers: list[gpd.GeoDataFrame]) -> list[gpd.GeoDataFrame]:
+def calculate(
+    planning_grid: gpd.GeoDataFrame, cons_layers: list[gpd.GeoDataFrame]
+) -> list[gpd.GeoDataFrame]:
     """
-    Author: Mitch
-
+    Author: Mitch Albert
+    Target function for processor pool. Intersects planning grid with each conservation layer
+    and calculates area of overlap.
     Parameters
     ----------
     planning_grid : gpd.GeoDataFrame
-        DESCRIPTION.
+        The planning grid to intersect with conservation layers.
     cons_layers : list[gpd.GeoDataFrame]
-        DESCRIPTION.
+        The conservation layers to intersect with the planning grid.
 
     Returns
     -------
-    TYPE
-        DESCRIPTION.
+    intersections : list[gpd.GeoDataFrame]
+        The planning grid intersected with each conservation layer with an additional
+        column containing the area of overlap.
 
     """
-
-    if not len(cons_layers):
-        print_error_msg("No planning layers loaded.")
-        return []
-    if planning_grid.empty:
-        print_error_msg("No planning layers loaded.")
-        return []
-
     intersections = []
-
     for layer in cons_layers:
-        # can add crs check here
-        intersection = gpd.overlay(planning_grid, layer, how="intersection")
-        # add intersection gdf to list
-        intersection[AREA_X] = intersection.area
-        intersections.append(intersection)
-
+        if not layer.empty:
+            clipped_grid = gpd.clip(
+                planning_grid, layer.geometry.convex_hull
+            )  # this may not improve performance
+            intersection = gpd.overlay(clipped_grid, layer, how="intersection")
+            intersection[AMOUNT] = intersection.area
+            intersection[AMOUNT] = intersection[AMOUNT].round().astype(int)
+            intersections.append(intersection)
+        else:
+            print_warning_msg("Skipping empty conservation layer.")
     return intersections
 
 
-# def getArgs() -> argparse.ArgumentParser:
-#     """
-#     Adds command line arguments to the program.
+def calculate_overlap(
+    planning_grid: gpd.GeoDataFrame, cons_layers: list[gpd.GeoDataFrame]
+) -> list[gpd.GeoDataFrame]:
+    """
+    Author: Mitch
+    Intersects planning grid with conservation layers and calculates area of overlap.
+    Parameters
+    ----------
+    planning_grid : gpd.GeoDataFrame
+        The planning grid to intersect with conservation layers.
+    cons_layers : list[gpd.GeoDataFrame]
+        A list of conservation layers containing only the desired conservation features
+        to intersect with the planning grid.
 
-#     Returns
-#     -------
-#     argparse.ArgumentParser
-#         Contains passed command line arguments.
+    Returns
+    -------
+    list[gpd.GeoDataFrame] | list[]
+        The intersected gdfs, or an empty list if planning grid or conservation layers are not loaded,
+        or if there are no intersecting features.
 
-#     """
+    """
+    # TODO: check if planning grid and conservation layer are in same CRS
 
-#     # create parser
-#     parser = argparse.ArgumentParser()
-#     # add arguments here
-#     return parser.parse_args()
+    # check if planning grid and conservation layers are loaded, otherwise return empty list
+    if not len(cons_layers):
+        print_warning_msg("No conservation feature layers loaded.")
+        return []
+    if planning_grid.empty:
+        print_warning_msg("No planning unit grid loaded.")
+        return []
 
+    # split planning grid into chunks to be processed by each core
+    planning_grid_divisions = np.array_split(planning_grid, CORES)
 
-# def create_planning_unit(hex_size: float, grid_size: float , pos: tuple(float, float)) -> gpd.geoseries:
-#     pass
+    # define partial function to pass to pool, this enables passing multiple arguments to calculate() from the pool
+    # otherwise we would have to pass a tuple of arguments
+    calc_overlap_partial = partial(calculate, cons_layers=cons_layers)
+
+    # this will hold the results of the pool
+    intersections = []
+
+    if verbose:
+        print_info(f"Starting intersection calculations with {CORES} cores")
+        progress = print_progress_start("Calculating intersections", dots=10, time=1)
+    # start timer
+    start_time = time()
+    # Create a Pool object with the number of cores specified in CORES
+    with Pool(CORES) as pool:
+        # Iterate through the planning_grid_divisions and apply the calc_overlap_partial function to each element
+        for result in pool.imap_unordered(
+            calc_overlap_partial, planning_grid_divisions
+        ):
+            intersections.extend(result)
+
+    if verbose:
+        print_progress_stop(progress)
+        print_info_complete(
+            f"Intersection calculations completed in: {(time() - start_time):.2f} seconds"
+        )
+
+    return intersections
+
 
 # %% CRS helper function
 
@@ -606,35 +719,152 @@ def validate_crs(crs: any, target_crs: str) -> bool:
     return
 
 
-# %% Main
-
-
-def main():
+def plot_layers(
+    planning_unit_grid: gpd.GeoDataFrame,
+    conserv_layers: list[gpd.GeoDataFrame],
+    filtered_conserv_layers: list[gpd.GeoDataFrame],
+):
     """
-    Author: Mitch
+    Author: Mitch Albert
+    Displays the view layers menu and allows the user to select which layers to plot.
+
+    Parameters
+    ----------
+    planning_unit_grid : gpd.GeoDataFrame
+        The planning unit grid.
+    conserv_layers : list[gpd.GeoDataFrame]
+        The conservation feature layers without filtering.
+    filtered_conserv_layers : list[gpd.GeoDataFrame]
+        The selected conservation features after filtering.
 
     Returns
     -------
-    int
-        DESCRIPTION.
+    None.
 
     """
 
-    def main_menu():
+    def plot(layers: list[gpd.GeoDataFrame]):
         """
-        Author: Mitch
+        Author: Mitch Albert
+        Internal function to plot the layers. This is called by the view layers menu.
+        Only acceps a list of geodataframes and loops through them plotting each one.
+
+        Parameters
+        ----------
+        layers : list[gpd.GeoDataFrame]
+            The list of geodataframes to plot.
 
         Returns
         -------
         None.
 
         """
-        planning_unit_grid = gpd.GeoDataFrame()
-        filtered_planning_unit_grid = gpd.GeoDataFrame()
-        planning_layers = []  # gpd.GeoDataFrame()
-        filtered_planning_layers = []  # gpd.GeoDataFrame()
-        intersections_gdf = []
-        intersections_df = pd.DataFrame()
+        if len(layers):
+            try:
+                if verbose:
+                    progress = print_progress_start("Plotting", dots=3)
+                for layer in layers:
+                    if layer.empty:
+                        print_warning_msg("Nothing to plot.")
+                        continue
+                    layer.plot()
+                    plt.show()
+            except Exception as e:
+                print_warning_msg(f"Error while plotting\n")
+                print(e)
+            finally:
+                if verbose:
+                    print_progress_stop(progress)
+        else:
+            print_warning_msg("Nothing plot.")
+        return
+
+    while True:
+        try:
+            selection = int(
+                input(
+                    """
+    View Layers Menu:
+        1 Planning Unit Grid
+        2 Conservation Features Files
+        3 Filtered Conservation Features
+        9 Return to Main Menu
+    >>> """
+                )
+            )
+        except ValueError:
+            print_warning_msg(msg_value_error)
+            continue
+
+        # 1 Planning Unit Grid
+        if selection == 1:
+            print_info("Plotting Planning Unit Grid...")
+            plot([] if planning_unit_grid.empty else [planning_unit_grid])
+            continue
+
+        # 2 All Conservation Features Files
+        elif selection == 2:
+            print_info("Plotting Conservation Features...")
+            plot(conserv_layers)
+            continue
+
+        # 3 Filtered Conservation Features
+        elif selection == 3:
+            print_info("Plotting Filtered Conservation Features...")
+            plot(filtered_conserv_layers)
+            continue
+
+        # 9 Return to Main Menu
+        elif selection == 9:
+            break
+
+        else:
+            print_warning_msg(msg_value_error)
+            continue
+    return
+
+
+# %% Main
+
+
+def main():
+    """
+    Author: Mitch
+    Main function. Calls main_menu() and runs until user enters 9 to exit.
+    """
+
+    def main_menu():
+        """
+        Author: Mitch
+        Prints main menu and returns user selection. If user selection is not
+        valid, will print error message and return to main menu. If user
+        enters 9, the program will exit. Otherwise calls appropriate function based
+        on user selection.
+
+        Returns
+        -------
+        None.
+
+        """
+        # intialize variables
+        planning_unit_grid = gpd.GeoDataFrame()  # planning unit grid
+        filtered_planning_unit_grid = (
+            gpd.GeoDataFrame()
+        )  # this is the planning unit grid after filtering, now obsolete
+        conserv_layers = (
+            []
+        )  # list of planning layers gdfs, name will change to conservation_features
+        filtered_conserv_layers = (
+            []
+        )  # this is list of conservation_features gdfs after filtering
+        intersections_gdf = (
+            []
+        )  # list of gdfs of planning unit / conservation feature intersections
+        intersections_df = (
+            pd.DataFrame()
+        )  # dataframe of planning unit / conservation feature intersections, used to easy csv export
+
+        # target_crs = get_crs()
 
         while True:
             try:
@@ -644,7 +874,7 @@ def main():
     Main Menu:
         1 Create Planning Unit Grid
         2 Select Planning Units
-        3 Load Planning Layers
+        3 Load Conservation Features Files
         4 Select Conservation Features
         5 View Layers
         6 Calculate Overlap
@@ -654,67 +884,87 @@ def main():
                     )
                 )
             except ValueError:
-                print_error_msg(msg_value_error)
+                print_warning_msg(msg_value_error)
+                continue
 
+            # 1 Create Planning Unit GridFeatures
             if selection == 1:
-                planning_unit_grid = create_planning_unit_grid(planning_unit_grid)
+                planning_unit_grid = create_planning_unit_grid()
                 continue
+
+            # 2 Select Planning Units
             elif selection == 2:
-                filtered_planning_unit_grid = select_planning_units(planning_unit_grid)
+                # NOTE: this is now obsolete, but only commenting out for now
+                # filtered_planning_unit_grid = select_planning_units(planning_unit_grid)
                 continue
+
+            # 3 Load Conservation Features Files
             elif selection == 3:
-                # load planning layers
-                planning_layers = load_planning_layers(planning_layers)
+                conserv_layers = load_convservation_layers(conserv_layers)
                 continue
+
+            # 4 Select conservation features
             elif selection == 4:
-                # select conservation features
-                filtered_planning_layers = query_planning_layers(planning_layers)
+                filtered_conserv_layers = query_conservation_layers(conserv_layers)
                 continue
+
+            # 5 View Layers
             elif selection == 5:
-                # View Layers
+                plot_layers(planning_unit_grid, conserv_layers, filtered_conserv_layers)
                 continue
+
+            # 6 Calculate Overlap
             elif selection == 6:
-                # Calculate Overlap
+                # TODO: update to remove filtered_planning_unit_grid
                 # intersections_gdf = calc_overlap(
-                #     filtered_planning_unit_grid, filtered_planning_layers
+                #     filtered_planning_unit_grid, filtered_conserv_layers
                 # )
-                intersections_gdf = calc_overlap(planning_unit_grid, planning_layers)
+                intersections_gdf = calculate_overlap(
+                    planning_unit_grid, conserv_layers
+                )
+
                 if len(intersections_gdf):
-                    intersections_df = pd.DataFrame(gpd.GeoDataFrame(pd.concat(intersections_gdf, ignore_index=True)))
+                    intersections_df = pd.DataFrame(
+                        gpd.GeoDataFrame(
+                            pd.concat(intersections_gdf, ignore_index=True)
+                        )
+                    )
+                # intersections_df.sort_values(PUID, ascending=True, inplace=True)
                 continue
+
+            # 7 Save Results
             elif selection == 7:
-                # Save Results
+                # TODO: add saving of planning unit grid
                 if intersections_df.empty:
-                    print_error_msg("No results to save.")
+                    print_warning_msg("No results to save.")
                     continue
-                file_name = get_save_file_name(title="Save results to csv", f_types=ft_csv)
-                intersections_df.to_csv(file_name, columns=[PUID, ID, AREA_X], index=False)
+                file_name = get_save_file_name(
+                    title="Save results to csv", f_types=ft_csv
+                )
+                # Columns names / order need to be updated to match sample file from client, waiting to receive
+                intersections_df.to_csv(
+                    file_name,
+                    header=[SPECIES, PU, AMOUNT],
+                    columns=[ID, PUID, AMOUNT],
+                    index=False,
+                )
                 continue
+
+            # 9 Quit
             elif selection == 9:
-                # quit
+                # TODO: add confirmation prompt if user has not saved results
                 break
+
+            else:
+                print_warning_msg(msg_value_error)
+            continue
         return
 
-    # start the main menu thread
+    main_menu()
 
-    def server_thread():
-        app.app.run()
-        return
+    print_info_complete("All done!")
 
-    server = threading.Thread(target=server_thread)
-    main_menu_thread = threading.Thread(target=main_menu)
-
-    server.start()
-    sleep(0.1)
-    main_menu_thread.start()
-    main_menu_thread.join()
-
-    if server.is_alive():
-        server.join(1.0)
-
-    print("All done!")
-
-    return 0
+    return
 
 
 if __name__ == "__main__":
@@ -722,3 +972,5 @@ if __name__ == "__main__":
         input("\nTESTING COMPLETE")
     else:
         main()
+
+# %%
