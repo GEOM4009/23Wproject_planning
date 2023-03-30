@@ -118,7 +118,7 @@ def create_hexgrid(bbx, side):
     return grid
 
 
-def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
+def create_planning_unit_grid() -> gpd.GeoDataFrame:
     """
     Author: Lucas
     This function will take user input to create a hexagonal planning
@@ -131,9 +131,6 @@ def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
     previously created grid can be input by the user
     Parameters
     ----------
-    planning_unit_grid : gpd.geodataframe
-        if a previuos hexagonal grid has been created it can be input
-        to skip the creation of a new grid
     Area: float
         Size of grid cell that the user will use, the units will be
         the same units as the CRS that the user specifies
@@ -703,7 +700,7 @@ def validate_crs(crs: any, target_crs: str) -> bool:
     """
     Author: Winna
     Utility function to validate a Coordinate Reference System (CRS) and either correct it or inform users of the mismatch.
-    
+
     Parameters:
     -----------
     crs : any
