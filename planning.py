@@ -470,8 +470,9 @@ def query_conservation_layers(
 
     filtered_conserv_layers = []
     for layer in conserv_layers:
+        #make empty list
         filtered_conserv_layers.append(layer.copy(deep=True))
-
+        
     while True:
         try:
             selection = int(
@@ -496,87 +497,36 @@ def query_conservation_layers(
             continue
 
         if selection == 1:
-            # 1 ID
-            # then filter by ID
-            # make empty list to fill with the unique values in planning layers ID field, to show user
-            filter = []
-            # loop through the geodataframes to find and save every unique ID value, save to the filter list
-            for gdf in conserv_layers:
-                filter.extend(gdf["ID"].unique())
-            # get user to select ID of interest
-            # NOTE this is currently for selection of single features, but will be expanded to multi later
-            # filterValues is essentially a list with one value for now
-            chosenFeature = get_user_selection(filter)
-            # do the filtering - loop through planning layers, keeping rows that match chosenFeature
-            for i in range(len(filtered_conserv_layers)):
-                # filter by checking if the ID value is in the chosenFeature list
-                filtered_conserv_layers[i] = filtered_conserv_layers[i][
-                    filtered_conserv_layers[i]["ID"].isin(chosenFeature)
-                ]
-                # this does not fully work, it keeps returning an empty list of geodataframes, will solve for the next report
-
-            continue
+           #Filter by ID
+           #Get user to select feature(s) of interest by ID - give pop-up of all possible ID's
+           filter = [ids for gdf in conserv_layers for ids in gdf[ID].unique()]
+           chosenFeatures = get_user_selection(filter, multi=True)
+           #Do the filtering using .isin
+           filtered_conserv_layers = [gdf[gdf[ID].isin(chosenFeatures)] for gdf in conserv_layers] 
+           continue
+       
         elif selection == 2:
-            # 2 CLASS_TYPE
-            # then filter by class type
-            # make empty list to fill with the unique values in planning layers CLASS_TYPE field, to show user
-            filter = []
-            # loop through the geodataframes to find and save every unique CLASS_TYPE value, save to the filter list
-            for gdf in conserv_layers:
-                filter.extend(gdf["CLASS_TYPE"].unique())
-            # get user to select class of interest
-            # NOTE this is currently for selection of single features, but will be expanded to multi later
-            # filterValues is essentially a list with one value for now
-            chosenFeature = get_user_selection(filter)
-            # do the filtering - loop through planning layers, keeping rows that match chosenFeature
-            for i in range(len(filtered_conserv_layers)):
-                # filter by checking if the CLASS_TYPE value is in the chosenFeature list
-                filtered_conserv_layers[i] = filtered_conserv_layers[i][
-                    filtered_conserv_layers[i]["CLASS_TYPE"].isin(chosenFeature)
-                ]
-                # this does not fully work, it keeps returning an empty list of geodataframes, will solve for the next report
-
+            #Filter by CLASS
+            filter = [classy for gdf in conserv_layers for classy in gdf[CLASS].unique()]
+            chosenFeatures = get_user_selection(filter, multi=True)
+            #Do the filtering using .isin
+            filtered_conserv_layers = [gdf[gdf[CLASS].isin(chosenFeatures)] for gdf in conserv_layers] 
             continue
+        
         elif selection == 3:
-            # 3 GROUP_
-            # Then filter by group
-            # make empty list to fill with the unique values in planning layers GROUP_ field, to show user
-            filter = []
-            # loop through the geodataframes to find and save every unique GROUP_ value, save to the filter list
-            for gdf in conserv_layers:
-                filter.extend(gdf["GROUP_"].unique())
-            # get user to select GROUP_ of interest
-            # NOTE this is currently for selection of single features, but will be expanded to multi later
-            # filterValues is essentially a list with one value for now
-            chosenFeature = get_user_selection(filter)
-            # do the filtering - loop through planning layers, keeping rows that match chosenFeature
-            for i in range(len(filtered_conserv_layers)):
-                # filter by checking if the group value is in the chosenFeature list
-                filtered_conserv_layers[i] = filtered_conserv_layers[i][
-                    filtered_conserv_layers[i]["GROUP_"].isin(chosenFeature)
-                ]
-                # this does not fully work, it keeps returning an empty list of geodataframes, will solve for the next report
+            #Filter by GROUP
+            filter = [group for gdf in conserv_layers for group in gdf[GROUP].unique()]
+            chosenFeatures = get_user_selection(filter, multi=True)
+            #Do the filtering using .isin
+            filtered_conserv_layers = [gdf[gdf[GROUP].isin(chosenFeatures)] for gdf in conserv_layers] 
             continue
 
         elif selection == 4:
-            # 3 NAME
-            # Then filter by name
-            # make empty list to fill with the unique values in planning layers NAME field, to show user
-            filter = []
-            # loop through the geodataframes to find and save every unique NAME value, save to the filter list
-            for gdf in conserv_layers:
-                filter.extend(gdf["NAME"].unique())
-            # get user to select ID of interest
-            # NOTE this is currently for selection of single features, but will be expanded to multi later
-            # filterValues is essentially a list with one value for now
-            chosenFeature = get_user_selection(filter)
-            # do the filtering - loop through planning layers, keeping rows that match chosenFeature
-            for i in range(len(filtered_conserv_layers)):
-                # filter by checking if the name value is in the chosenFeature list
-                filtered_conserv_layers[i] = filtered_conserv_layers[i][
-                    filtered_conserv_layers[i]["NAME"].isin(chosenFeature)
-                ]
-                # this does not fully work, it keeps returning an empty list of geodataframes, will solve for the next report
+            #Filter by NAME
+            filter = [name for gdf in conserv_layers for name in gdf[NAME].unique()]
+            chosenFeatures = get_user_selection(filter, multi=True)
+            #Do the filtering using .isin
+            filtered_conserv_layers = [gdf[gdf[NAME].isin(chosenFeatures)] for gdf in conserv_layers] 
             continue
 
         elif selection == 9:
@@ -585,7 +535,7 @@ def query_conservation_layers(
         else:
             print_warning_msg(msg_value_error)
             continue
-
+    print(filtered_conserv_layers)
     return filtered_conserv_layers
 
 
