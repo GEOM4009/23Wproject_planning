@@ -18,6 +18,7 @@ Revision History:
                     Added Load files function
 """
 
+# import modules
 from os import getcwd, chdir, path, environ
 
 environ["USE_PYGEOS"] = "0"
@@ -38,59 +39,42 @@ stop_progress = False  # bollean to stop the progress thread
 def print_progress_start(
     msg: str = msg_processing, dots: int = 10, time: float = 1
 ) -> threading.Thread:
-    """
-    Author: Mitch Albert
-    Provides a progress indicator in the terminal. The progress indicator is a the
+    """Provide a progress indicator in the terminal. The progress indicator is a the
     msg string followed by a series of dots. The dots are printed at a rate of time
     seconds per dot. The number of dots is controlled by the dots parameter.
+    Author: Mitch Albert
 
-    Parameters
-    ----------
-    msg : str, optional
-        The msg string is printed before the dots. The default is msg_processing.
-    dots : int, optional
-        The number of dots to prints before resetting back to the message string. The default is 10.
-    time : float, optional
-        The time in seconds between each dot. The default is 1.
-
-    Returns
-    -------
-    prog_thread : threading.Thread
-        The progress thread handle. This is required to stop the progress indicator.
+    :param msg: The msg string is printed before the dots, defaults to msg_processing.
+    :type msg: str, optional
+    :param dots: The number of dots to prints before resetting back to the message string, defaults to 10.
+    :type dots: int, optional
+    :param time: The time in seconds between each dot, defaults to 1
+    :type time: float, optional
+    :return: The progress thread handle. This is required to stop the progress indicator.
+    :rtype: threading.Thread
     """
 
     def back(spaces: int) -> str:
-        """
-        Author: Mitch Albert
-        Utility function to move the cursor back a number of spaces. This is used to
+        """Utility function to move the cursor back a number of spaces. This is used to
         remove the dots printed by the progress indicator.
+        Author: Mitch Albert
 
-        Parameters
-        ----------
-        spaces : int
-            The number of spaces to move the cursor back.
-        Returns
-        -------
-        str
-            The character string to move the cursor back 'spaces' spaces.
+        :param spaces: The number of spaces to move the cursor back.
+        :type spaces: int
+        :return: The character string to move the cursor back 'spaces' spaces.
+        :rtype: str
         """
         return f"\x1b[{spaces}D"
 
     def progress_thread(msg: str, dots: int, time: float):
-        """
+        """Internal thread function to print the progress dots while the work is being done.
         Author: Mitch Albert
-        Internal thread function to print the progress dots while the work is being done.
-        Parameters
-        ----------
-        msg : str
-            The msg string is printed before the dots.
-        dots : int
-            The number of dots to prints before resetting back to the message string.
-        time : float
-            The time in seconds between each dot.
-        Returns
-        -------
-        None.
+        :param msg: The msg string is printed before the dots.
+        :type msg: str
+        :param dots: The number of dots to prints before resetting back to the message string.
+        :type dots: int
+        :param time: The time in seconds between each dot.
+        :type time: float
         """
         count = 0
         print(msg, end="")
@@ -118,19 +102,12 @@ def print_progress_start(
 
 
 def print_progress_stop(thread: threading.Thread) -> None:
-    """
+    """Stop the progress indicator thread, using the thread handle returned by
+    :func:`~print_progress_start`.
     Author: Mitch Albert
-    Stops the progress indicator thread, using the thread handle returned by the
-    print_progress_start() function.
-    Parameters
-    ----------
-    thread : threading.Thread
-        THe thread handle returned by the print_progress_start() function.
 
-    Returns
-    -------
-    None.
-
+    :param thread: The thread handle returned by the :func:`~print_progress_start` function.
+    :type thread: threading.Thread
     """
     global stop_progress
     stop_progress = True
@@ -143,124 +120,80 @@ def print_msg(
     colour: str = "",
     msg_type: str = "",
 ) -> None:
-    """
-    Author: Mitch Albert
-    Prints a message to the terminal. The message is printed in the colour specified
+    """Print a message to the terminal. The message is printed in the colour specified
     with the colour parameter. The msg_type parameter is printed before the message.
     This is used by the other print utility functions to print different types of
     messages with the same general format.
+    Author: Mitch Albert
 
-    Parameters
-    ----------
-    msg : str
-        The message to print.
-    colour : str, optional
-        The colour to print the message in. The default is "".
-    msg_type : str, optional
-        The message type to print before the message. The default is "".
-
-    Returns
-    -------
-    None
-
+    :param msg: The message to print.
+    :type msg: str
+    :param colour: The colour to print the message in, defaults to "".
+    :type colour: str, optional
+    :param msg_type: The message type to print before the message, defaults to "".
+    :type msg_type: str, optional
     """
     print(f"{BOLD}{colour}{msg_type}{RST}{colour}{msg}{RST}")
     return
 
 
 def print_info(msg: str) -> None:
-    """
-    Author: Mitch Albert
-    Prints an information message to the terminal. The message is printed
+    """Print an information message to the terminal. The message is printed
     in blue with the "INFO: " prefix.
-
-    Parameters
-    ----------
-    msg : str
-        The message to print.
-
-    Returns
-    -------
-    None
+    Author: Mitch Albert
+    :param msg: The message to print.
+    :type msg: str
     """
     print_msg(msg, OKBLUE, msg_type="INFO: ")
     return
 
 
 def print_info_complete(msg: str) -> None:
-    """
-    Author: Mitch Albert
-    Prints an information message to the terminal. The message is printed
+    """Print an information message to the terminal. The message is printed
     in green with the "INFO: " prefix. Used to indicate that a process has
     completed successfully.
+    Author: Mitch Albert
 
-    Parameters
-    ----------
-    msg : str
-        The message to print.
-
-    Returns
-    -------
-    None
+    :param msg: The message to print.
+    :type msg: str
     """
     print_msg(msg, OKGREEN, "INFO: ")
     return
 
 
 def print_warning_msg(msg: str) -> None:
-    """
-    Author: Mitch Albert
-    Prints a warning message to the terminal. The message is printed in yellow
+    """Print a warning message to the terminal. The message is printed in yellow
     with the "WARNING: " prefix.
+    Author: Mitch Albert
 
-    Parameters
-    ----------
-    msg : str
-        The message to print.
-
-    Returns
-    -------
-    None
+    :param msg: _description_
+    :type msg: The message to print.
     """
     print_msg(msg, WARNING, "WARNING: ")
     return
 
 
 def print_error_msg(msg: str) -> None:
-    """
-    Author: Mitch Albert
-    Prints an error message to the terminal. The message is printed in red
+    """Print an error message to the terminal. The message is printed in red
     with the "ERROR: " prefix.
+    Author: Mitch Albert
 
-    Parameters
-    ----------
-    msg : str
-        The message to print.
-
-    Returns
-    -------
-    None
-
+    :param msg: The message to print.
+    :type msg: str
     """
     print_msg(msg, FAIL, "ERROR: ")
     return
 
 
 def get_user_float(msg: str) -> float:
-    """
-    Author: Mitch Albert
-    Gets a float from the user. If the user enters a non-float value, the
+    """Get a float from the user. If the user enters a non-float value, the
     function will continue to prompt the user until a valid float is entered.
-    Parameters
-    ----------
-    msg : str
-        DESCRIPTION.
+    Author: Mitch Albert
 
-    Returns
-    -------
-    float
-        DESCRIPTION.
-
+    :param msg: The message to display to the user.
+    :type msg: str
+    :return: The user's input as a float.
+    :rtype: float
     """
     while True:
         try:
@@ -277,14 +210,11 @@ def get_user_float(msg: str) -> float:
 
 
 def get_top_root() -> Tk:
-    """
+    """Create an invisible root window that has been forced to top and into focus.
     Author: Mitch Albert
-    Creates an invisible root window that has been forced to top and into focus.
 
-    Returns
-    -------
-    Tk
-        The invisible top level root window.
+    :return: The invisible top level root window.
+    :rtype: Tk
     """
     root = Tk()
     root.withdraw()
@@ -302,29 +232,22 @@ def get_top_root() -> Tk:
 def load_files(
     files: list[str] | str, verbose: str = True
 ) -> list[gpd.GeoDataFrame] | gpd.GeoDataFrame:
-    """
-    Author: Mitch Albert
-    Loads a list of files into a list of GeoDataFrames. If a single file name is
+    """Load a list of files into a list of GeoDataFrames. If a single file name is
     passed that is not is a list, the function will return a single GeoDataFrame
     not inside a list. If a list of files is passed, even if it only contains
     1 file, the function will return a list.
+    Author: Mitch Albert
 
-    Parameters
-    ----------
-    files : list[str] | str
-        The list of file names to load, or a single file name.
-    verbose : str, optional
-        Controls whether the function prints progress messages and file information.
-        The default is True.
-
-    Returns
-    -------
-    list[gpd.GeoDataFrame] | gpd.GeoDataFrame
-        A list of geodataframes if a list was passed in or a single geodataframe
-        if a single file name was passed in.
+    :param files: The list of file names to load, or a single file name.
+    :type files: list[str] | str
+    :param verbose: Controls whether the function prints progress messages and file information, defaults to True.
+    :type verbose: str, optional
+    :return: A list of geodataframes if a list was passed in or a single geodataframe
+            if a single file name was passed in.
+    :rtype: list[gpd.GeoDataFrame] | gpd.GeoDataFrame
     """
     if verbose:
-        print_info(f"Loading file(s)...")
+        print_info("Loading file(s)...")
 
     gdfs = []
     single_file = False
@@ -360,27 +283,21 @@ def get_file(
     title: str = "Select File To Load",
     initialdir=getcwd(),
 ) -> str:
-    """
-    Author: Mitch Albert
-    Opens a tkinter file dialog for a user to selelect a single file to load.
+    """Open a tkinter file dialog for a user to selelect a single file to load.
     Uses get_files() to do the heavy lifting, but passes the multi=False to limit
     the user to selecting a single file.
+    Author: Mitch Albert
 
-    Parameters
-    ----------
-    f_types : tuple[str, str] | list[tuple[str, str]], optional
-        The file type(s) allowed. The default is standard_types.
-    title : str, optional
-        Title of the dialog box. Default is "Select File To Load".
-
-    Returns
-    -------
-    str | None
-        A str that is pathlike, or None if cancel is selected.
+    :param f_types: The file type(s) allowed, defaults to ft_standard.
+    :type f_types: tuple[str, str] | list[tuple[str, str]], optional
+    :param title: Title of the dialog box, defaults to "Select File To Load"
+    :type title: str, optional
+    :param initialdir: The directory the window will open to, defaults to getcwd().
+    :type initialdir: str, optional
+    :return: A str that is pathlike, or None if cancel is selected.
+    :rtype: str
     """
-
     file = get_files(f_types, title=title, initialdir=initialdir, multi=False)
-
     return file[0] if file != None else None
 
 
@@ -390,26 +307,20 @@ def get_files(
     initialdir: str = getcwd(),
     multi: bool = True,
 ) -> List[str]:
-    """
+    """Open a tkinter file dialog for a user to selelect file(s) to load.
     Author: Mitch Albert
-    Opens a tkinter file dialog for a user to selelect file(s) to load.
 
-    Parameters
-    ----------
-    f_types : tuple[str, str] | list[tuple[str, str]], optional
-        The file type(s) allowed. The default is standard_types.
-    title : str, optional
-        Title of dialog box. Default is "Select Files To Load".
-    initialdir : str, optional
-        The initial directory to open the dialog box in. The default is getcwd().
-    mutli : bool, optional
-        Whether or not to allow multiple file selection. The default is True.
-    Returns
-    -------
-    List[str] | None
-        A list of str's that is pathlike, or None if cancel is selected
+    :param f_types: The file type(s) allowed, defaults to ft_standard.
+    :type f_types: tuple[str, str] | list[tuple[str, str]], optional
+    :param title: Title of dialog box, defaults to "Select Files To Load"
+    :type title: str, optional
+    :param initialdir: The initial directory dialog box open to, defaults to getcwd().
+    :type initialdir: str, optional
+    :param multi: Enables or disables multiple file selection, defaults to True.
+    :type multi: bool, optional
+    :return: A list of str's that is pathlike, or None if cancel is selected.
+    :rtype: List[str]
     """
-
     if not isinstance(f_types, list):
         f_types = [f_types]
 
@@ -432,29 +343,20 @@ def get_files_from_dir(
     title: str = "Select Directory To Load Files From",
     initialdir: str = getcwd(),
 ) -> List[str]:
-    """
-    Author: Mitch Albert
-    Opens a tkinter file dialog for a user to selelect a directory. All
+    """Open a tkinter file dialog for a user to selelect a directory. All
     contained files matching the filter will be returned.
+    Author: Mitch Albert
 
-    Parameters
-    ----------
-    f_types : tuple[str, str] | list[tuple[str, str]], optional
-        The file type(s) allowed. The default is ft_any.
-    title : str, optional
-        Title of the dialog box. Default is "Select Directory To Load Files
-        From".
-    initialdir : str, optional
-        The initial directory to open the dialog box in. The default is getcwd().
-
-    Returns
-    -------
-    List[str] | None
-        A list of strings that are pathlike, or None if cancel is selected or
-        no files
-        are found that match the filter.
+    :param f_types: The file type(s) allowed, defaults to ft_any.
+    :type f_types: tuple[str, str] | list[tuple[str, str]], optional
+    :param title: Title of the dialog box, defaults to "Select Directory To Load Files From".
+    :type title: str, optional
+    :param initialdir: The initial directory to open the dialog box in, defaults to getcwd().
+    :type initialdir: str, optional
+    :return: A list of strings that are pathlike, or None if cancel is selected or
+             no files are found that match the filter.
+    :rtype: List[str]
     """
-
     wd = getcwd()
     root = get_top_root()
     dir = tkinter.filedialog.askdirectory(
@@ -484,24 +386,18 @@ def get_save_file_name(
     title: str = "Save File",
     initialdir: str = getcwd(),
 ) -> str:
-    """
-    Author: Mitch Albert
-    Open a tkinter file dialog for the user to indicate where and what to
+    """Open a tkinter file dialog for the user to indicate where and what to
     save a file as.
+    Author: Mitch Albert
 
-    Parameters
-    ----------
-    f_types : tuple[str, str] | list[tuple[str, str]], optional
-        The file type(s) allowed. The default is standard_types.
-    title : str, optional
-        Title of dialog box. Default is "Save File".
-    initialdir : str, optional
-        The initial directory to open the dialog box in. The default is getcwd().
-
-    Returns
-    -------
-    str | None
-        A str that is pathlike, or None if cancel is selected.
+    :param f_types: The file type(s) allowed, defaults to ft_standard_save.
+    :type f_types: tuple[str, str] | list[tuple[str, str]], optional
+    :param title: Title of dialog box, defaults to "Save File".
+    :type title: str, optional
+    :param initialdir:  The initial directory dialog box open to, defaults to getcwd()
+    :type initialdir: str, optional
+    :return: A str that is pathlike, or None if cancel is selected.
+    :rtype: str
     """
     if not isinstance(f_types, list):
         f_types = [f_types]
@@ -526,36 +422,28 @@ def get_user_selection(
     y: int = 600,
     bg: str = "#5ea5c9",
 ) -> list[any]:
-    """
-    Author: Mitch Albert
-    Opens a Tkinter window with the given list of items to select from.
+    """Open a Tkinter window with the given list of items to select from.
     Selction can be single or multiple.
+    Author: Mitch Albert
 
-    Parameters
-    ----------
-    item_list : list[str]
-        The list representing the items to select from.
-    multi : bool, optional
-        Determines whether multiple selections are allowed or not. The default
-        is False.
-    title : str, optional
-        The title of the Tkinter window. The default is "Please Make A
-        Selection".
-    x : int, optional
-        The width of the Tkinter window. The default is 400.
-    y : int, optional
-        The height of the Tkinter window. The default is 600.
-    bg : str, optional
-        The background color of the Tkinter window. The default is "#5ea5c9".
-
-    Returns
-    -------
-    list[str]
-        A list of selected items, or an empty list if none are selected or
-        cancel is selected. If `multi` is False, the list can contain only
-        one item.
-
+    :param item_list: The list representing the items to select from.
+    :type item_list: list[any]
+    :param multi: Determines whether multiple selections are allowed or not, defaults to False.
+    :type multi: bool, optional
+    :param title: The title of the Tkinter window, defaults to "Please Make A Selection".
+    :type title: str, optional
+    :param x: The width of the Tkinter window, defaults to 400
+    :type x: int, optional
+    :param y: The height of the Tkinter window, defaults to 600
+    :type y: int, optional
+    :param bg: The background color of the Tkinter window, defaults to "#5ea5c9"
+    :type bg: str, optional
+    :return: A list of selected items, or an empty list if none are selected or
+             cancel is selected. If `multi` is False, the list can contain only
+             one item.
+    :rtype: list[any]
     """
+    # set the selection mode
     multi = MULTIPLE if multi else SINGLE
     selected = []
 
