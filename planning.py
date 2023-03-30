@@ -440,8 +440,6 @@ def load_convservation_layers(conserv_layers: list) -> list[gpd.GeoDataFrame]:
 
 
 # %% Filter for specific conservation features
-
-
 def query_conservation_layers(
     conserv_layers: list[gpd.GeoDataFrame],
 ) -> list[gpd.GeoDataFrame]:
@@ -592,28 +590,20 @@ def query_conservation_layers(
 
 
 # %% Calculate planning unit / conservation feature overlap
-
-
 def calculate(
     planning_grid: gpd.GeoDataFrame, cons_layers: list[gpd.GeoDataFrame]
 ) -> list[gpd.GeoDataFrame]:
-    """
-    Author: Mitch Albert
-    Target function for processor pool. Intersects planning grid with each conservation layer
+    """Target function for processor pool. Intersects planning grid with each conservation layer
     and calculates area of overlap.
-    Parameters
-    ----------
-    planning_grid : gpd.GeoDataFrame
-        The planning grid to intersect with conservation layers.
-    cons_layers : list[gpd.GeoDataFrame]
-        The conservation layers to intersect with the planning grid.
+    Author: Mitch Albert
 
-    Returns
-    -------
-    intersections : list[gpd.GeoDataFrame]
-        The planning grid intersected with each conservation layer with an additional
-        column containing the area of overlap.
-
+    :param planning_grid: The planning grid to intersect with the conservation layers.
+    :type planning_grid: gpd.GeoDataFrame
+    :param cons_layers: The conservation layers to intersect with the planning grid.
+    :type cons_layers: list[gpd.GeoDataFrame]
+    :return: The list of conservation layers after being intersected with the planning grid
+             with an additional column containing the area of overlap.
+    :rtype: list[gpd.GeoDataFrame]
     """
     intersections = []
     for layer in cons_layers:
@@ -633,24 +623,19 @@ def calculate(
 def calculate_overlap(
     planning_grid: gpd.GeoDataFrame, cons_layers: list[gpd.GeoDataFrame]
 ) -> list[gpd.GeoDataFrame]:
-    """
-    Author: Mitch
-    Intersects planning grid with conservation layers and calculates area of overlap.
-    Parameters
-    ----------
-    planning_grid : gpd.GeoDataFrame
-        The planning grid to intersect with conservation layers.
-    cons_layers : list[gpd.GeoDataFrame]
-        A list of conservation layers containing only the desired conservation features
-        to intersect with the planning grid.
+    """Intersect the planning grid with the conservation layers and calculate the area of overlap.
+    Author: Mitch Albert
 
-    Returns
-    -------
-    list[gpd.GeoDataFrame] | list[]
-        The intersected gdfs, or an empty list if planning grid or conservation layers are not loaded,
-        or if there are no intersecting features.
-
+    :param planning_grid: The planning grid to intersect with conservation layers.
+    :type planning_grid: gpd.GeoDataFrame
+    :param cons_layers: A list of conservation layers that should contain only the desired
+                        conservation features to intersect with the planning grid.
+    :type cons_layers: list[gpd.GeoDataFrame]
+    :return: The intersected gdfs, or an empty list if planning grid or conservation layers are not loaded,
+             or if there are no intersecting features. The list will contain CORES * len(cons_layers) gdfs
+    :rtype: list[gpd.GeoDataFrame]
     """
+
     # TODO: check if planning grid and conservation layer are in same CRS
 
     # check if planning grid and conservation layers are loaded, otherwise return empty list
@@ -694,8 +679,6 @@ def calculate_overlap(
 
 
 # %% CRS helper function
-
-
 def validate_crs(crs: any, target_crs: str) -> bool:
     """
     Author: Winna
@@ -719,14 +702,18 @@ def validate_crs(crs: any, target_crs: str) -> bool:
             return True
         else:
             # If it doesn't match, prompt the user to either correct it or fail
-            user_input = input(f"The CRS '{crs}' does not match the target CRS '{target_crs}'. Would you like to correct it? [y/n]: ")
-            if user_input.lower() == 'y':
+            user_input = input(
+                f"The CRS '{crs}' does not match the target CRS '{target_crs}'. Would you like to correct it? [y/n]: "
+            )
+            if user_input.lower() == "y":
                 # If the user wants to correct it, prompt for the correct CRS and check if it matches the target CRS
                 corrected_crs = input("Enter the corrected CRS: ")
                 if corrected_crs == target_crs:
                     return True
                 else:
-                    print(f"The corrected CRS '{corrected_crs}' does not match the target CRS '{target_crs}'. Validation failed.")
+                    print(
+                        f"The corrected CRS '{corrected_crs}' does not match the target CRS '{target_crs}'. Validation failed."
+                    )
                     return False
             else:
                 # If the user doesn't want to correct it, fail the validation
@@ -734,20 +721,24 @@ def validate_crs(crs: any, target_crs: str) -> bool:
                 return False
     elif isinstance(crs, dict):
         # If crs is a dictionary, check if it has a 'crs' key and if its value matches the target CRS
-        if 'crs' in crs:
-            if crs['crs'] == target_crs:
+        if "crs" in crs:
+            if crs["crs"] == target_crs:
                 return True
             else:
                 # If it doesn't match, prompt the user to either correct it or fail
-                user_input = input(f"The CRS '{crs['crs']}' does not match the target CRS '{target_crs}'. Would you like to correct it? [y/n]: ")
-                if user_input.lower() == 'y':
+                user_input = input(
+                    f"The CRS '{crs['crs']}' does not match the target CRS '{target_crs}'. Would you like to correct it? [y/n]: "
+                )
+                if user_input.lower() == "y":
                     # If the user wants to correct it, prompt for the correct CRS and check if it matches the target CRS
                     corrected_crs = input("Enter the corrected CRS: ")
                     if corrected_crs == target_crs:
-                        crs['crs'] = corrected_crs
+                        crs["crs"] = corrected_crs
                         return True
                     else:
-                        print(f"The corrected CRS '{corrected_crs}' does not match the target CRS '{target_crs}'. Validation failed.")
+                        print(
+                            f"The corrected CRS '{corrected_crs}' does not match the target CRS '{target_crs}'. Validation failed."
+                        )
                         return False
                 else:
                     # If the user doesn't want to correct it, fail the validation
@@ -755,56 +746,45 @@ def validate_crs(crs: any, target_crs: str) -> bool:
                     return False
         else:
             # If the dictionary doesn't have a 'crs' key, prompt the user to either correct it or fail
-            user_input = input("The input dictionary does not have a 'crs' key. Would you like to add it and enter a CRS? [y/n]: ")
-            if user_input.lower() == 'y':
+            user_input = input(
+                "The input dictionary does not have a 'crs' key. Would you like to add it and enter a CRS? [y/n]: "
+            )
+            if user_input.lower() == "y":
                 # If the user wants to add a 'crs' key, prompt for the CRS and check if it matches the target CRS
                 corrected_crs = input("Enter the CRS: ")
                 if corrected_crs == target_crs:
-                    crs['crs'] = corrected_crs
+                    crs["crs"] = corrected_crs
                     return True
                 else:
-                    print(f"The entered CRS '{corrected_crs}' does not match the target CRS '{target_crs}'. Validation failed.")
+                    print(
+                        f"The entered CRS '{corrected_crs}' does not match the target CRS '{target_crs}'. Validation failed."
+                    )
 
 
+# %% Plotting function
 def plot_layers(
     planning_unit_grid: gpd.GeoDataFrame,
     conserv_layers: list[gpd.GeoDataFrame],
     filtered_conserv_layers: list[gpd.GeoDataFrame],
 ):
-    """
+    """Display the view layers menu and allow the user to select which layers to plot.
     Author: Mitch Albert
-    Displays the view layers menu and allows the user to select which layers to plot.
 
-    Parameters
-    ----------
-    planning_unit_grid : gpd.GeoDataFrame
-        The planning unit grid.
-    conserv_layers : list[gpd.GeoDataFrame]
-        The conservation feature layers without filtering.
-    filtered_conserv_layers : list[gpd.GeoDataFrame]
-        The selected conservation features after filtering.
-
-    Returns
-    -------
-    None.
-
+    :param planning_unit_grid: The planning unit grid.
+    :type planning_unit_grid: gpd.GeoDataFrame
+    :param conserv_layers: The conservation feature layers without filtering.
+    :type conserv_layers: list[gpd.GeoDataFrame]
+    :param filtered_conserv_layers: The selected conservation features after filtering.
+    :type filtered_conserv_layers: list[gpd.GeoDataFrame]
     """
 
     def plot(layers: list[gpd.GeoDataFrame]):
-        """
-        Author: Mitch Albert
-        Internal function to plot the layers. This is called by the view layers menu.
+        """Internal function to plot the layers. This is called by the view layers menu.
         Only acceps a list of geodataframes and loops through them plotting each one.
+        Author: Mitch Albert
 
-        Parameters
-        ----------
-        layers : list[gpd.GeoDataFrame]
-            The list of geodataframes to plot.
-
-        Returns
-        -------
-        None.
-
+        :param layers: The list of gpd.geodataframes to plot.
+        :type layers: list[gpd.GeoDataFrame]
         """
         if len(layers):
             try:
@@ -872,26 +852,17 @@ def plot_layers(
 
 
 # %% Main
-
-
 def main():
-    """
-    Author: Mitch
-    Main function. Calls main_menu() and runs until user enters 9 to exit.
+    """Main function. Calls main_menu() which will runs until user enters 9 to exit
+    Author: Mitch Albert
     """
 
     def main_menu():
-        """
-        Author: Mitch
-        Prints main menu and returns user selection. If user selection is not
+        """Print main menu and return user selection. If user selection is not
         valid, will print error message and return to main menu. If user
         enters 9, the program will exit. Otherwise calls appropriate function based
         on user selection.
-
-        Returns
-        -------
-        None.
-
+        Author: Mitch Albert
         """
         # intialize variables
         planning_unit_grid = gpd.GeoDataFrame()  # planning unit grid

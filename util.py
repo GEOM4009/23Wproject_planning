@@ -272,7 +272,7 @@ def load_files(
                 print_progress_stop(progress)
                 print_info_complete(f"Loading {file.split('/')[-1]} complete")
                 print_info(f"CRS: {gdf.crs}")
-                print_info(f"Shape: {gdf.shape[0]} Rows, {gdf.shape[1]} Columns\n")
+                print_info(f"Shape: {gdf.shape[0]} Rows, {gdf.shape[1]} Columns")
                 print_info("Columns: " + ", ".join(str(col) for col in gdf.columns))
 
     return gdfs[0] if single_file else gdfs
