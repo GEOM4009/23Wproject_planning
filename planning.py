@@ -561,6 +561,7 @@ def calc_overlap(
 
 def validate_crs(crs: any, target_crs: str) -> bool:
     """
+    Author: Winna
     Utility function to validate a Coordinate Reference System (CRS) and either correct it or inform users of the mismatch.
     
     Parameters:
