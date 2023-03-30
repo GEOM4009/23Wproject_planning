@@ -29,21 +29,25 @@ verbose = True
 # %% create a planning unit grid
 def create_hexagon(l, x, y):
     """
+    Author:Kadir Şahbaz
     Create a hexagon centered on (x, y)
     :param l: length of the hexagon's edge
     :param x: x-coordinate of the hexagon's center
     :param y: y-coordinate of the hexagon's center
     :return: The polygon containing the hexagon's coordinates
+    Source:https://gis.stackexchange.com/questions/341218/creating-a-hexagonal-grid-of-regular-hexagons-of-definite-area-anywhere-on-the-g
     """
     c = [[x + math.cos(math.radians(angle)) * l, y + math.sin(math.radians(angle)) * l] for angle in range(0, 360, 60)]
     return Polygon(c)
 
 def create_hexgrid(bbx, side):
     """
+    Author:Kadir Şahbaz
     returns an array of Points describing hexagons centers that are inside the given bounding_box
     :param bbx: The containing bounding box. The bbox coordinate should be in Webmercator.
     :param side: The size of the hexagons'
     :return: The hexagon grid
+    Source:https://gis.stackexchange.com/questions/341218/creating-a-hexagonal-grid-of-regular-hexagons-of-definite-area-anywhere-on-the-g
     """
     grid = []
     v_step = math.sqrt(3) * side
@@ -90,12 +94,28 @@ def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
     grid that is defined by a central coordinate, cell resolution,
     and grid height and width. A unique Planning unit ID is then given
     to each hexagon and the final grid can be output to a shapefile.
+    It can also create this grid using other methods, such as taking a
+    shapefile as input, the CRS and the bounds of that file will be
+    determined and used to create the planning grid. Additionally a 
+    previously created grid can be input by the user
     Parameters
     ----------
     planning_unit_grid : gpd.geodataframe
         if a previuos hexagonal grid has been created it can be input
         to skip the creation of a new grid
-
+    Area: float
+        Size of grid cell that the user will use, the units will be 
+        the same units as the CRS that the user specifies
+    grid_size_x: float
+        width of the grid
+    grid_size_y: float
+        height of the grid
+    grid_lat: float
+        y coordinate for center of grid
+    grid_lon: float
+        x coordinate for center of grid
+    Prj: float
+        CRS the grid will be output with
     Returns
     -------
     TYPE
@@ -170,6 +190,7 @@ def create_planning_unit_grid(planning_unit_grid) -> gpd.GeoDataFrame:
         elif selection == 4:
             # 4 Extents from File
             file = get_file(title="Select a file to load the extents from")
+            Area = get_user_float("Grid Cell Area (Meters Squared):")
             Prj = file.crs
             box = file.total_bounds
             
