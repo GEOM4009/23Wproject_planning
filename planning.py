@@ -65,20 +65,30 @@ def crs():
       target crs: the formula for the crs. Then to use the crs pyproj is needed. 
 
     """
-    global target_crs
+
 
     # Ask user for CRS
-    crs = input("Enter 1 for Albers Equal Area or enter an EPSG Number: ")
+    crs = input("Enter CRS: ")
 
-    if crs == "1":
-        # Create CRS for Albers Equal Area
-        target_crs = "ESRI:102001"
+    if crs == "Albers Equal Area":
+    # Get inputs from user
+        lat_1 = float(input("Enter Latitude of the first standard parallel: "))
+        lat_2 = float(input("Enter Latitude of the second standard parallel: "))
+        lon_0 = float(input("Enter Longitude of the central meridian: "))
+        lat_0 = float(input("Enter Latitude of the projection origin: "))
+
+    # Create CRS
+    target_crs = pyproj.Proj(
+        "+proj=aea +lat_1={} +lat_2={} +lon_0={} +lat_0={} +datum=WGS84 +units=m +no_defs".format(
+            lat_1, lat_2, lon_0, lat_0
+        )
+    )
     else:
-        
-        #for the target crs use 
-        target_crs = "EPSG:" + crs
+        # Use the input CRS
+        target_crs = pyproj.Proj(crs)
 
-    return
+
+
 
 # %% create a planning unit grid
 def create_hexagon(l, x, y):
@@ -211,6 +221,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
                 hexagons.append(create_hexagon(edge, center[0], center[1]))
             #Geometry list is turned into a geodataframe
             planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=Prj)
+            planning_unit_grid.to_crs(crs=target_crs, inplace = True)
             # unique PUID is assigned to each hexagon
             planning_unit_grid["PUID"] = planning_unit_grid.index + 1
             planning_unit_grid.name = "Planning Unit Grid"
@@ -222,11 +233,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             file = get_file(title="Select a file to load the grid from")
             if file:
                 planning_unit_grid = load_files(file, verbose)
-                # TODO: This is a hack to get the global target_crs, should enable
-                #      an option to do it this way or ask the user which crs to use.
-                #      This crs should checked to see if it is projected or not.
-                global target_crs
-                target_crs = planning_unit_grid.crs
+                planning_unit_grid.to_crs(crs=target_crs, inplace = True)
                 if verbose:
                     print_info(f"Hex area: {round(planning_unit_grid.geometry.area[0])}")
             else:
@@ -271,7 +278,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             for center in hex_centers:
                 hexagons.append(create_hexagon(edge, center[0], center[1]))
             #Geometry list is turned into a geodataframe
-            planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=crs)
+            planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=target_crs)
             # unique PUID is assigned to each hexagon
             planning_unit_grid.name = "Planning Unit Grid"
             planning_unit_grid["PUID"] = planning_unit_grid.index + 1
@@ -859,7 +866,7 @@ def main():
             pd.DataFrame()
         )  # dataframe of planning unit / conservation feature intersections, used to easy csv export
 
-        crs()
+        # target_crs = get_crs()
 
         while True:
             try:
