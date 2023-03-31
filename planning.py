@@ -65,30 +65,20 @@ def crs():
       target crs: the formula for the crs. Then to use the crs pyproj is needed. 
 
     """
-
+    global target_crs
 
     # Ask user for CRS
-    crs = input("Enter CRS: ")
+    crs = input("Enter 1 for Albers Equal Area or enter an EPSG Number: ")
 
-    if crs == "Albers Equal Area":
-    # Get inputs from user
-        lat_1 = float(input("Enter Latitude of the first standard parallel: "))
-        lat_2 = float(input("Enter Latitude of the second standard parallel: "))
-        lon_0 = float(input("Enter Longitude of the central meridian: "))
-        lat_0 = float(input("Enter Latitude of the projection origin: "))
-
-    # Create CRS
-    target_crs = pyproj.Proj(
-        "+proj=aea +lat_1={} +lat_2={} +lon_0={} +lat_0={} +datum=WGS84 +units=m +no_defs".format(
-            lat_1, lat_2, lon_0, lat_0
-        )
-    )
+    if crs == "1":
+        # Create CRS for Albers Equal Area
+        target_crs = "ESRI:102001"
     else:
-        # Use the input CRS
-        target_crs = pyproj.Proj(crs)
+        
+        #for the target crs use 
+        target_crs = "EPSG:" + crs
 
-
-
+    return
 
 # %% create a planning unit grid
 def create_hexagon(l, x, y):
@@ -870,7 +860,7 @@ def main():
             pd.DataFrame()
         )  # dataframe of planning unit / conservation feature intersections, used to easy csv export
 
-        # target_crs = get_crs()
+        crs()
 
         while True:
             try:
