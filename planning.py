@@ -173,10 +173,10 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
         width of the grid
     grid_size_y: float
         height of the grid
-    grid_lat: float
+    grid_x_coor: float
         y coordinate for center of grid
-    grid_lon: float
-        x coordinate for center of grid
+    grid_y_coor: float
+        y coordinate for center of grid
     Returns
     -------
     TYPE
@@ -252,25 +252,24 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             Area = get_user_float("Grid Cell Area (Meters Squared):")
             grid_size_x = get_user_float("Grid Size X (m): ")
             grid_size_y = get_user_float("Grid Size Y (m): ")
-            grid_lat = get_user_float("Latitude of grid anchor point (dd): ")
-            grid_lon = get_user_float("Longitude of grid anchor point (dd): ")
+            grid_x_coor = get_user_float("Central x coordinate (Same units of CRS): ")
+            grid_y_coor = get_user_float("Central y coordiante (Same units of CRS): ")
             # Half of the grid width and height can be added to the central
             # coordinate to create a study area that meets the criteria
             xdiff = grid_size_x / 2
             ydiff = grid_size_y / 2
-            #Bounds of the area of interest are created by converting meters
-            #to degrees so that the distance can be determined using coordinates
-            xmax = grid_lon + (180 / pi) * (xdiff / 6378137) / cos(grid_lat)
-            xmin = grid_lon - (180 / pi) * (xdiff / 6378137) / cos(grid_lat)
-            ymax = grid_lat + (180 / pi) * (ydiff / 6378137)
-            ymin = grid_lat - (180 / pi) * (ydiff / 6378137)
+            #Bounds of the area of interest are created by adding the half the 
+            #grid size to each coordinate
+            xmax = grid_x_coor + xdiff
+            xmin = grid_x_coor - xdiff
+            ymax = grid_y_coor + ydiff
+            ymin = grid_y_coor - ydiff
             area = "POLYGON(({0} {1}, {0} {3}, {2} {3}, {2} {1}, {0} {1}))".format(
-                xmin, ymin, xmax, ymax
-            )
+                xmin, ymin, xmax, ymax)
             #poly is converted to a geoseries
             area_shply = shapely.wkt.loads(area)
             area_geos = gpd.GeoSeries(area_shply)
-            box = area_geos.total_bounds
+            box = area_geos.total_bounds            
             #edge length of individual hexagon is calculated using the area
             edge = math.sqrt(Area**2 / (3 / 2 * math.sqrt(3)))
             #grid is created that has the central points of each hexagon
