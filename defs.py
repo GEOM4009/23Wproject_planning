@@ -59,13 +59,6 @@ SPECIES = "species"
 PU = "pu"
 AMOUNT = "amount"
 
-TARGET_CRS = (
-    'PROJCS["EPSG_42304_LCC",GEOGCS["NAD83",DATUM'
-    '["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY'
-    '["EPSG","7019"]],AUTHORITY["EPSG","6269"]],PRIMEM["Greenwich",0],UNIT'
-    '["Degree",0.0174532925199433]],PROJECTION["Lambert_Conformal_Conic_2SP"],PARAMETER'
-    '["latitude_of_origin",49],PARAMETER["central_meridian",-95],PARAMETER'
-    '["standard_parallel_1",49],PARAMETER["standard_parallel_2",77],PARAMETER'
-    '["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY'
-    '["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH]]'
-)
+TARGET_CRS = 'PROJCS["Canada_Albers_Equal_Area_Conic",GEOGCS["NAD83",DATUM["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6269"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4269"]],PROJECTION["Albers_Conic_Equal_Area"],PARAMETER["latitude_of_center",40],PARAMETER["longitude_of_center",-96],PARAMETER["standard_parallel_1",50],PARAMETER["standard_parallel_2",70],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["ESRI","102001"]]'
+
+# TARGET_CRS = "ESRI:102001"
