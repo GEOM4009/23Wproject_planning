@@ -228,6 +228,32 @@ def get_top_root() -> Tk:
     root.focus_force()
     return root
 
+def save_gdf(gdf: gpd.GeoDataFrame) -> None:
+    """Save a GeoDataFrame to a file. The user is prompted to select a file name and
+    file type. The file type is determined by the file extension. The supported file
+    types are shapefile and geopackage.
+    Author: Mitch Albert
+
+    :param gdf: The GeoDataFrame to save.
+    :type gdf: gpd.GeoDataFrame
+    """
+    if hasattr(gdf, 'name'):
+        print_info(f"Saving {gdf.name}...")
+    else:
+        gdf.name = ""
+    file_name = get_save_file_name(title=f"Saving {gdf.name}", f_types=ft_standard)
+    if file_name:
+        ext = file_name.split(".")[-1]
+        if ext == SHAPE_DRIVER:
+            gdf.to_file(file_name)
+        elif ext == GPKG_DRIVER:
+            gdf.to_file(file_name, driver=GPKG_DRIVER)
+        else:
+            print_warning_msg("Skipping file save. File type not supported.")
+    else:
+        print_warning_msg("Skipping file save. File name not provided.")
+    return
+
 
 def load_files(
     files: list[str] | str, verbose: str = True
