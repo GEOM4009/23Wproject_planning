@@ -10,7 +10,6 @@ different steps of the data and planning process.
 NOTE: This script must be run in the geom4009 environment, but will require
       the installation of the following additional packages:
 
-    conda install -c anaconda flask  --> this will be removed in the future
     conda install -c conda-forge tk  --> provides the tkinter GUI
 
 TODO: Get user input to set CRS for the project
@@ -24,7 +23,6 @@ from defs import *
 import os
 
 os.environ["USE_PYGEOS"] = "0"
-import app
 from time import time
 
 from shapely.geometry import Polygon
@@ -48,7 +46,7 @@ from functools import partial
 run_tests = False
 verbose = True
 CORES = psutil.cpu_count(logical=False)
-target_crs = ""
+target_crs = TARGET_CRS
 rectangular_grid = False
 
 
@@ -63,10 +61,7 @@ def create_hexagon(l, x, y):
     :return: The polygon containing the hexagon's coordinates
     Source:https://gis.stackexchange.com/questions/341218/creating-a-hexagonal-grid-of-regular-hexagons-of-definite-area-anywhere-on-the-g
     """
-    c = [
-        [x + math.cos(math.radians(angle)) * l, y + math.sin(math.radians(angle)) * l]
-        for angle in range(0, 360, 60)
-    ]
+    c = [[x + math.cos(math.radians(angle)) * l, y + math.sin(math.radians(angle)) * l] for angle in range(0, 360, 60)]
     return Polygon(c)
 
 
@@ -151,6 +146,8 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
 
     """
 
+    planning_unit_grid = gpd.GeoDataFrame()
+
     while True:
         try:
             selection = int(
@@ -198,9 +195,12 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
                 global target_crs
                 target_crs = planning_unit_grid.crs
                 if verbose:
-                    print_info(
-                        f"Hex area: {round(planning_unit_grid.geometry.area[0])}"
-                    )
+                    print_info(f"Hex area: {round(planning_unit_grid.geometry.area[0])}")
+                crs_text = planning_unit_grid.crs.to_string()
+
+                # Save the CRS text to a file
+                with open("my_crs.txt", "w") as f:
+                    f.write(crs_text)
             else:
                 print_warning_msg("No file loaded, please try again.")
                 continue
@@ -226,9 +226,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             xmin = grid_lon - (180 / pi) * (xdiff / 6378137) / cos(grid_lat)
             ymax = grid_lat + (180 / pi) * (ydiff / 6378137)
             ymin = grid_lat - (180 / pi) * (ydiff / 6378137)
-            area = "POLYGON(({0} {1}, {0} {3}, {2} {3}, {2} {1}, {0} {1}))".format(
-                xmin, ymin, xmax, ymax
-            )
+            area = "POLYGON(({0} {1}, {0} {3}, {2} {3}, {2} {1}, {0} {1}))".format(xmin, ymin, xmax, ymax)
             area_shply = shapely.wkt.loads(area)
             area_geos = gpd.GeoSeries(area_shply)
             box = area_geos.total_bounds
@@ -365,9 +363,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
 #     return filtered_planning_unit_grid
 
 
-# %% Load planning layers from file
-
-
+# %% Load conservation feature layers from file
 def load_convservation_layers(conserv_layers: list) -> list[gpd.GeoDataFrame]:
     """
     Author: Nata
@@ -408,9 +404,7 @@ def load_convservation_layers(conserv_layers: list) -> list[gpd.GeoDataFrame]:
             if files:
                 conserv_layers = load_files(files, verbose)
             else:
-                print_warning_msg(
-                    "No files loaded from directory, please verify files and try again."
-                )
+                print_warning_msg("No files loaded from directory, please verify files and try again.")
                 continue
             break
 
@@ -420,9 +414,7 @@ def load_convservation_layers(conserv_layers: list) -> list[gpd.GeoDataFrame]:
             if files:
                 conserv_layers = load_files(files, verbose)
             else:
-                print_warning_msg(
-                    "No files loaded from directory, try selecting files manually."
-                )
+                print_warning_msg("No files loaded from directory, try selecting files manually.")
                 continue
             break
 
@@ -444,35 +436,53 @@ def query_conservation_layers(
     conserv_layers: list[gpd.GeoDataFrame],
 ) -> list[gpd.GeoDataFrame]:
     """
-        Author: Nata
+    Author: Nata
 
-        Takes planning layers and user input on conservation features of interest to select by attribute and save new file
+    Takes planning layers and user input on conservation features of interest to select by attribute and save new file
 
-    NOTE this is not fully functional yet, it keeps returning empty files, but is close to solving!
+    Parameters
+    ----------
+    conserv_layers : list[gpd.GeoDataFrame]
+        Takes the pre-loaded planning layers file.
 
-        Parameters
-        ----------
-        conserv_layers : list[gpd.GeoDataFrame]
-            Takes the pre-loaded planning layers file.
-
-        Returns
-        -------
-        TYPE
-            Returns a geodataframe of only the selected conservation features.
+    Returns
+    -------
+    TYPE
+        Returns a geodataframe of only the selected conservation features.
 
     """
-
-    filtered_conserv_layers = []
 
     if not len(conserv_layers):
         print_warning_msg("No planning layers loaded.")
         return []
 
+    # This will reset the list of layers to the original loaded layers every time
     filtered_conserv_layers = []
     for layer in conserv_layers:
-        #make empty list
         filtered_conserv_layers.append(layer.copy(deep=True))
-        
+    for i in range(len(conserv_layers)):
+        filtered_conserv_layers[i].name = conserv_layers[i].name
+
+    attribute = ""
+
+    def filter_by_attribute(conserv_layers: list[gpd.GeoDataFrame], attribute: any) -> list[gpd.GeoDataFrame]:
+        filter = []
+        for gdf in conserv_layers:
+            for attr in gdf[attribute].unique():
+                filter.append(attr)
+
+        chosenFeatures = get_user_selection(filter, multi=True, title="Select features to keep")
+
+        filtered_gdf_list = []
+        for gdf in conserv_layers:
+            if attribute in gdf.columns:
+                filtered_gdf = gdf[gdf[attribute].astype(str).isin(chosenFeatures)]
+                filtered_gdf.name = gdf.name
+                filtered_gdf_list.append(filtered_gdf)
+            else:
+                print_warning_msg(f"Attribute {attribute} not found in {gdf.name}")
+        return filtered_gdf_list
+
     while True:
         try:
             selection = int(
@@ -483,6 +493,7 @@ def query_conservation_layers(
         2 CLASS_TYPE
         3 GROUP_
         4 NAME
+        5 Choose Attribute
         9 Return to Main Menu
     >>> """
                 )
@@ -496,53 +507,45 @@ def query_conservation_layers(
             print_warning_msg(msg_value_error)
             continue
 
+        # 1 ID
         if selection == 1:
-           #Filter by ID
-           #Get user to select feature(s) of interest by ID - give pop-up of all possible ID's
-           filter = [ids for gdf in conserv_layers for ids in gdf[ID].unique()]
-           chosenFeatures = get_user_selection(filter, multi=True)
-           #Do the filtering using .isin
-           filtered_conserv_layers = [gdf[gdf[ID].isin(chosenFeatures)] for gdf in conserv_layers] 
-           continue
-       
+            attribute = ID
+            break
+        # 2 CLASS_TYPE
         elif selection == 2:
-            #Filter by CLASS
-            filter = [classy for gdf in conserv_layers for classy in gdf[CLASS].unique()]
-            chosenFeatures = get_user_selection(filter, multi=True)
-            #Do the filtering using .isin
-            filtered_conserv_layers = [gdf[gdf[CLASS].isin(chosenFeatures)] for gdf in conserv_layers] 
-            continue
-        
+            attribute = CLASS
+            break
+        # 3 GROUP_
         elif selection == 3:
-            #Filter by GROUP
-            filter = [group for gdf in conserv_layers for group in gdf[GROUP].unique()]
-            chosenFeatures = get_user_selection(filter, multi=True)
-            #Do the filtering using .isin
-            filtered_conserv_layers = [gdf[gdf[GROUP].isin(chosenFeatures)] for gdf in conserv_layers] 
-            continue
-
+            attribute = GROUP
+            break
+        # 4 NAME
         elif selection == 4:
-            #Filter by NAME
-            filter = [name for gdf in conserv_layers for name in gdf[NAME].unique()]
-            chosenFeatures = get_user_selection(filter, multi=True)
-            #Do the filtering using .isin
-            filtered_conserv_layers = [gdf[gdf[NAME].isin(chosenFeatures)] for gdf in conserv_layers] 
-            continue
-
+            attribute = NAME
+            break
+        elif selection == 5:
+            column_names = []
+            for gdf in conserv_layers:
+                column_names.extend(list(gdf.columns))
+            column_names = list(set(column_names))
+            sel = get_user_selection(column_names, title="Select attribute to filter by")
+            attribute = sel[0] if sel else ""
+            break
+        # 9 Return to Main Menu
         elif selection == 9:
-            # 9 Return to Main Menu
             break
         else:
             print_warning_msg(msg_value_error)
             continue
-    print(filtered_conserv_layers)
+
+    if attribute:
+        filtered_conserv_layers = filter_by_attribute(conserv_layers, attribute)
+
     return filtered_conserv_layers
 
 
 # %% Calculate planning unit / conservation feature overlap
-def calculate(
-    planning_grid: gpd.GeoDataFrame, cons_layers: list[gpd.GeoDataFrame]
-) -> list[gpd.GeoDataFrame]:
+def calculate(planning_grid: gpd.GeoDataFrame, cons_layers: list[gpd.GeoDataFrame]) -> list[gpd.GeoDataFrame]:
     """Target function for processor pool. Intersects planning grid with each conservation layer
     and calculates area of overlap.
     Author: Mitch Albert
@@ -558,9 +561,7 @@ def calculate(
     intersections = []
     for layer in cons_layers:
         if not layer.empty:
-            clipped_grid = gpd.clip(
-                planning_grid, layer.geometry.convex_hull
-            )  # this may not improve performance
+            clipped_grid = gpd.clip(planning_grid, layer.geometry.convex_hull)  # this may not improve performance
             intersection = gpd.overlay(clipped_grid, layer, how="intersection")
             intersection[AMOUNT] = intersection.area
             intersection[AMOUNT] = intersection[AMOUNT].round().astype(int)
@@ -570,9 +571,7 @@ def calculate(
     return intersections
 
 
-def calculate_overlap(
-    planning_grid: gpd.GeoDataFrame, cons_layers: list[gpd.GeoDataFrame]
-) -> list[gpd.GeoDataFrame]:
+def calculate_overlap(planning_grid: gpd.GeoDataFrame, cons_layers: list[gpd.GeoDataFrame]) -> list[gpd.GeoDataFrame]:
     """Intersect the planning grid with the conservation layers and calculate the area of overlap.
     Author: Mitch Albert
 
@@ -614,16 +613,12 @@ def calculate_overlap(
     # Create a Pool object with the number of cores specified in CORES
     with Pool(CORES) as pool:
         # Iterate through the planning_grid_divisions and apply the calc_overlap_partial function to each element
-        for result in pool.imap_unordered(
-            calc_overlap_partial, planning_grid_divisions
-        ):
+        for result in pool.imap_unordered(calc_overlap_partial, planning_grid_divisions):
             intersections.extend(result)
 
     if verbose:
         print_progress_stop(progress)
-        print_info_complete(
-            f"Intersection calculations completed in: {(time() - start_time):.2f} seconds"
-        )
+        print_info_complete(f"Intersection calculations completed in: {(time() - start_time):.2f} seconds")
 
     return intersections
 
@@ -744,7 +739,10 @@ def plot_layers(
                     if layer.empty:
                         print_warning_msg("Nothing to plot.")
                         continue
-                    layer.plot()
+                    fig, ax = plt.subplots(figsize=(10, 10))
+                    layer.plot(ax=ax)
+                    if layer.name:
+                        ax.set_title(layer.name)
                     plt.show()
             except Exception as e:
                 print_warning_msg(f"Error while plotting\n")
@@ -816,18 +814,10 @@ def main():
         """
         # intialize variables
         planning_unit_grid = gpd.GeoDataFrame()  # planning unit grid
-        filtered_planning_unit_grid = (
-            gpd.GeoDataFrame()
-        )  # this is the planning unit grid after filtering, now obsolete
-        conserv_layers = (
-            []
-        )  # list of planning layers gdfs, name will change to conservation_features
-        filtered_conserv_layers = (
-            []
-        )  # this is list of conservation_features gdfs after filtering
-        intersections_gdf = (
-            []
-        )  # list of gdfs of planning unit / conservation feature intersections
+        filtered_planning_unit_grid = gpd.GeoDataFrame()  # this is the planning unit grid after filtering, now obsolete
+        conserv_layers = []  # list of planning layers gdfs, name will change to conservation_features
+        filtered_conserv_layers = []  # this is list of conservation_features gdfs after filtering
+        intersections_gdf = []  # list of gdfs of planning unit / conservation feature intersections
         intersections_df = (
             pd.DataFrame()
         )  # dataframe of planning unit / conservation feature intersections, used to easy csv export
@@ -869,6 +859,10 @@ def main():
             # 3 Load Conservation Features Files
             elif selection == 3:
                 conserv_layers = load_convservation_layers(conserv_layers)
+                for layer in conserv_layers:
+                    filtered_conserv_layers.append(layer.copy(deep=True))
+                for i in range(len(conserv_layers)):
+                    filtered_conserv_layers[i].name = conserv_layers[i].name
                 continue
 
             # 4 Select conservation features
@@ -887,16 +881,10 @@ def main():
                 # intersections_gdf = calc_overlap(
                 #     filtered_planning_unit_grid, filtered_conserv_layers
                 # )
-                intersections_gdf = calculate_overlap(
-                    planning_unit_grid, conserv_layers
-                )
+                intersections_gdf = calculate_overlap(planning_unit_grid, filtered_conserv_layers)
 
                 if len(intersections_gdf):
-                    intersections_df = pd.DataFrame(
-                        gpd.GeoDataFrame(
-                            pd.concat(intersections_gdf, ignore_index=True)
-                        )
-                    )
+                    intersections_df = pd.DataFrame(gpd.GeoDataFrame(pd.concat(intersections_gdf, ignore_index=True)))
                 # intersections_df.sort_values(PUID, ascending=True, inplace=True)
                 continue
 
@@ -906,9 +894,7 @@ def main():
                 if intersections_df.empty:
                     print_warning_msg("No results to save.")
                     continue
-                file_name = get_save_file_name(
-                    title="Save results to csv", f_types=ft_csv
-                )
+                file_name = get_save_file_name(title="Save results to csv", f_types=ft_csv)
                 # Columns names / order need to be updated to match sample file from client, waiting to receive
                 intersections_df.to_csv(
                     file_name,
