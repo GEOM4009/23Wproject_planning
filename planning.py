@@ -58,11 +58,11 @@ def crs():
     """
   Author: Ethan
   The user enters the crs and if it is alber equal area then they have to enter the required coordinates which it will be processed into the crs formula to create the crs which will be
-  saved as a variable called target_crs. This will make it so the rest of the functions can call this function to keep a consistent CRS. 
-  
+  saved as a variable called target_crs. This will make it so the rest of the functions can call this function to keep a consistent CRS.
+
   Parameters:
-      
-      target crs: the formula for the crs. Then to use the crs pyproj is needed. 
+
+      target crs: the formula for the crs. Then to use the crs pyproj is needed.
 
     """
 
@@ -70,25 +70,13 @@ def crs():
     # Ask user for CRS
     crs = input("Enter CRS: ")
 
-    if crs == "Albers Equal Area":
-    # Get inputs from user
-        lat_1 = float(input("Enter Latitude of the first standard parallel: "))
-        lat_2 = float(input("Enter Latitude of the second standard parallel: "))
-        lon_0 = float(input("Enter Longitude of the central meridian: "))
-        lat_0 = float(input("Enter Latitude of the projection origin: "))
-
-    # Create CRS
-    target_crs = pyproj.Proj(
-        "+proj=aea +lat_1={} +lat_2={} +lon_0={} +lat_0={} +datum=WGS84 +units=m +no_defs".format(
-            lat_1, lat_2, lon_0, lat_0
-        )
-    )
+    if crs == "1":
+        # Create CRS for Albers Equal Area
+        target_crs = TARGET_CRS
     else:
-        # Use the input CRS
-        target_crs = pyproj.Proj(crs)
-
-
-
+        #for the target crs use
+        target_crs = "EPSG:" + crs
+    return
 
 # %% create a planning unit grid
 def create_hexagon(l, x, y):
@@ -255,7 +243,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             # coordinate to create a study area that meets the criteria
             xdiff = grid_size_x / 2
             ydiff = grid_size_y / 2
-            #Bounds of the area of interest are created by adding the half the 
+            #Bounds of the area of interest are created by adding the half the
             #grid size to each coordinate
             xmax = grid_x_coor + xdiff
             xmin = grid_x_coor - xdiff
@@ -266,7 +254,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             #poly is converted to a geoseries
             area_shply = shapely.wkt.loads(area)
             area_geos = gpd.GeoSeries(area_shply)
-            box = area_geos.total_bounds            
+            box = area_geos.total_bounds
             #edge length of individual hexagon is calculated using the area
             edge = math.sqrt(Area**2 / (3 / 2 * math.sqrt(3)))
             #grid is created that has the central points of each hexagon
@@ -467,11 +455,11 @@ def load_convservation_layers(conserv_layers: list) -> list[gpd.GeoDataFrame]:
         else:
             print_warning_msg(msg_value_error)
             continue
-    # TODO - add projection to target CRS once target CRS is setup properly
-    # projected_layers = []
-    # for layer in conserv_layers:
-    #     projected_layers.append(layer.to_crs(target_crs))
-    return conserv_layers
+
+    projected_layers = []
+    for layer in conserv_layers:
+        projected_layers.append(layer.to_crs(target_crs))
+    return projected_layers
 
 
 # %% Filter for specific conservation features
@@ -541,10 +529,6 @@ def query_conservation_layers(
     >>> """
                 )
             )
-        # 5 By Area --> Not sure about this one, could produce another menu
-        # to get extents from intput, file, or interactive on map, but that
-        # may be redundant if we just limits to the bounds of the selected
-        # planning units to start with.
 
         except ValueError:
             print_warning_msg(msg_value_error)
@@ -921,15 +905,9 @@ def main():
 
             # 6 Calculate Overlap
             elif selection == 6:
-                # TODO: update to remove filtered_planning_unit_grid
-                # intersections_gdf = calc_overlap(
-                #     filtered_planning_unit_grid, filtered_conserv_layers
-                # )
                 intersections_gdf = calculate_overlap(planning_unit_grid, filtered_conserv_layers)
-
                 if len(intersections_gdf):
                     intersections_df = pd.DataFrame(gpd.GeoDataFrame(pd.concat(intersections_gdf, ignore_index=True)))
-                # intersections_df.sort_values(PUID, ascending=True, inplace=True)
                 continue
 
             # 7 Save Results
@@ -953,7 +931,6 @@ def main():
                     print_warning_msg("No intersection results to save.")
                 else:
                     file_name = get_save_file_name(title="Save results to csv", f_types=ft_csv)
-                    # Columns names / order need to be updated to match sample file from client, waiting to receive
                     intersections_df.to_csv(
                         file_name,
                         header=[SPECIES, PU, AMOUNT],
