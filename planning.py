@@ -180,8 +180,6 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
         y coordinate for center of grid
     grid_lon: float
         x coordinate for center of grid
-    Prj: float
-        CRS the grid will be output with
     Returns
     -------
     TYPE
