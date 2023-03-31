@@ -65,6 +65,7 @@ def crs():
 
     """
 
+    global target_crs
 
     # Ask user for CRS
     crs = input("Enter CRS: ")
