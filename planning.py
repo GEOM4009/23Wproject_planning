@@ -208,20 +208,25 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
 
         # 1 Create Grid from Shape File extents
         if selection == 1:
+            #user can enter the file that will define the bounds and cell area
             file = get_file(title="Select a file to load the extents from")
             Area = get_user_float("Grid Cell Area (Meters Squared):")
             Prj = file.crs
             box = file.total_bounds
-
+            #edge length of individual hexagon is calculated using the area
             edge = math.sqrt(Area**2 / (3 / 2 * math.sqrt(3)))
             hex_centers = create_hexgrid(box, edge)
-            hex_centers
+            #Empy list is created that will contain the hexagons
             hexagons = []
+            #centre points are iterated through the function that creates a 
+            #hexagon around each of them and adds it to the list
             for center in hex_centers:
                 hexagons.append(create_hexagon(edge, center[0], center[1]))
+            #Geometry list is turned into a geodataframe
             planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=Prj)
-
+            # unique PUID is assigned to each hexagon
             planning_unit_grid["PUID"] = planning_unit_grid.index + 1
+            #file is saved for user to reuse
             planning_unit_grid.to_file("planning_unit_grid.shp")
             break
 
@@ -254,12 +259,12 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             grid_size_y = get_user_float("Grid Size Y (m): ")
             grid_lat = get_user_float("Latitude of grid anchor point (dd): ")
             grid_lon = get_user_float("Longitude of grid anchor point (dd): ")
-            Prj = get_user_float("Enter CRS code: ")
             # Half of the grid width and height can be added to the central
             # coordinate to create a study area that meets the criteria
             xdiff = grid_size_x / 2
             ydiff = grid_size_y / 2
-
+            #Bounds of the area of interest are created by converting meters
+            #to degrees so that the distance can be determined using coordinates
             xmax = grid_lon + (180 / pi) * (xdiff / 6378137) / cos(grid_lat)
             xmin = grid_lon - (180 / pi) * (xdiff / 6378137) / cos(grid_lat)
             ymax = grid_lat + (180 / pi) * (ydiff / 6378137)
@@ -267,19 +272,25 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             area = "POLYGON(({0} {1}, {0} {3}, {2} {3}, {2} {1}, {0} {1}))".format(
                 xmin, ymin, xmax, ymax
             )
+            #poly is converted to a geoseries
             area_shply = shapely.wkt.loads(area)
             area_geos = gpd.GeoSeries(area_shply)
             box = area_geos.total_bounds
+            #edge length of individual hexagon is calculated using the area
             edge = math.sqrt(Area**2 / (3 / 2 * math.sqrt(3)))
+            #grid is created that has the central points of each hexagon
             hex_centers = create_hexgrid(box, edge)
-            hex_centers
+            #Empty list that will contain the hexagon geometry
             hexagons = []
+            #centre points are iterated through the function that creates a 
+            #hexagon around each of them and adds it to the list
             for center in hex_centers:
                 hexagons.append(create_hexagon(edge, center[0], center[1]))
-
-            planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=Prj)
+            #Geometry list is turned into a geodataframe
+            planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=target_crs)
             # unique PUID is assigned to each hexagon
             planning_unit_grid["PUID"] = planning_unit_grid.index + 1
+            #file is saved for user to reuse
             planning_unit_grid.to_file("planning_unit_grid.shp")
             break
 
