@@ -813,6 +813,7 @@ def main():
         Author: Mitch Albert
         """
         # intialize variables
+        save = False  # flag to save the results
         planning_unit_grid = gpd.GeoDataFrame()  # planning unit grid
         filtered_planning_unit_grid = gpd.GeoDataFrame()  # this is the planning unit grid after filtering, now obsolete
         conserv_layers = []  # list of planning layers gdfs, name will change to conservation_features
@@ -906,9 +907,13 @@ def main():
 
             # 9 Quit
             elif selection == 9:
-                # TODO: add confirmation prompt if user has not saved results
-                break
-
+                quit = ''
+                if not save:
+                    print_warning_msg("No results were saved.")
+                    quit = input("Are you sure you want to quit? (y/n): ").casefold()
+                if quit == "y":
+                    break
+                continue
             else:
                 print_warning_msg(msg_value_error)
             continue
