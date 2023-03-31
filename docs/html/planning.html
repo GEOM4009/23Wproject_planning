@@ -1,0 +1,336 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>planning module &#8212; Conservartion Planning Project 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="util module" href="util.html" />
+    <link rel="prev" title="Introduction" href="intro.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-planning">
+<span id="planning-module"></span><h1>planning module<a class="headerlink" href="#module-planning" title="Permalink to this heading">¶</a></h1>
+<p>planning.py
+Authors: Mitch, Lucas, Ethan, Nata, Winaa</p>
+<p>This file contains the main script for the GEOM4009 planning project.
+It contains the main menu and all the functions for the different the
+different steps of the data and planning process.</p>
+<dl>
+<dt>NOTE: This script must be run in the geom4009 environment, but will require</dt><dd><blockquote>
+<div><p>the installation of the following additional packages:</p>
+</div></blockquote>
+<p>conda install -c conda-forge tk  –&gt; provides the tkinter GUI</p>
+</dd>
+</dl>
+<p>TODO: Get user input to set CRS for the project
+TODO: Confirm with client if there will be any use case for an argument parser
+TODO: Add additional error handling for the different functions</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="planning.calculate">
+<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">planning_grid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">GeoDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cons_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/planning.html#calculate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.calculate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Target function for processor pool. Intersects planning grid with each conservation layer
+and calculates area of overlap.
+Author: Mitch Albert</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>planning_grid</strong> (<em>gpd.GeoDataFrame</em>) – The planning grid to intersect with the conservation layers.</p></li>
+<li><p><strong>cons_layers</strong> (<em>list</em><em>[</em><em>gpd.GeoDataFrame</em><em>]</em>) – The conservation layers to intersect with the planning grid.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The list of conservation layers after being intersected with the planning grid
+with an additional column containing the area of overlap.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[gpd.GeoDataFrame]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="planning.calculate_overlap">
+<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">calculate_overlap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">planning_grid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">GeoDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cons_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/planning.html#calculate_overlap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.calculate_overlap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Intersect the planning grid with the conservation layers and calculate the area of overlap.
+Author: Mitch Albert</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>planning_grid</strong> (<em>gpd.GeoDataFrame</em>) – The planning grid to intersect with conservation layers.</p></li>
+<li><p><strong>cons_layers</strong> (<em>list</em><em>[</em><em>gpd.GeoDataFrame</em><em>]</em>) – A list of conservation layers that should contain only the desired
+conservation features to intersect with the planning grid.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The intersected gdfs, or an empty list if planning grid or conservation layers are not loaded,
+or if there are no intersecting features. The list will contain CORES * len(cons_layers) gdfs</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[gpd.GeoDataFrame]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="planning.create_hexagon">
+<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">create_hexagon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">l</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/planning.html#create_hexagon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.create_hexagon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Author:Kadir Şahbaz
+Create a hexagon centered on (x, y)
+:param l: length of the hexagon’s edge
+:param x: x-coordinate of the hexagon’s center
+:param y: y-coordinate of the hexagon’s center
+:return: The polygon containing the hexagon’s coordinates
+Source:https://gis.stackexchange.com/questions/341218/creating-a-hexagonal-grid-of-regular-hexagons-of-definite-area-anywhere-on-the-g</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="planning.create_hexgrid">
+<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">create_hexgrid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bbx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">side</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/planning.html#create_hexgrid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.create_hexgrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Author:Kadir Şahbaz
+returns an array of Points describing hexagons centers that are inside the given bounding_box
+:param bbx: The containing bounding box. The bbox coordinate should be in Webmercator.
+:param side: The size of the hexagons’
+:return: The hexagon grid
+Source:https://gis.stackexchange.com/questions/341218/creating-a-hexagonal-grid-of-regular-hexagons-of-definite-area-anywhere-on-the-g</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="planning.create_planning_unit_grid">
+<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">create_planning_unit_grid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">GeoDataFrame</span></span></span><a class="reference internal" href="_modules/planning.html#create_planning_unit_grid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.create_planning_unit_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Author: Lucas
+This function will take user input to create a hexagonal planning
+grid that is defined by a central coordinate, cell resolution,
+and grid height and width. A unique Planning unit ID is then given
+to each hexagon and the final grid can be output to a shapefile.
+It can also create this grid using other methods, such as taking a
+shapefile as input, the CRS and the bounds of that file will be
+determined and used to create the planning grid. Additionally a
+previously created grid can be input by the user
+:param Area: Size of grid cell that the user will use, the units will be</p>
+<blockquote>
+<div><p>the same units as the CRS that the user specifies</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid_size_x</strong> (<em>float</em>) – width of the grid</p></li>
+<li><p><strong>grid_size_y</strong> (<em>float</em>) – height of the grid</p></li>
+<li><p><strong>grid_x_coor</strong> (<em>float</em>) – y coordinate for center of grid</p></li>
+<li><p><strong>grid_y_coor</strong> (<em>float</em>) – y coordinate for center of grid</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Description</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>TYPE</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="planning.crs">
+<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">crs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/planning.html#crs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.crs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Author: Ethan
+The user enters the crs and if it is alber equal area then they have to enter the required coordinates which it will be processed into the crs formula to create the crs which will be
+saved as a variable called target_crs. This will make it so the rest of the functions can call this function to keep a consistent CRS.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>crs</strong> (<em>target</em>) – the formula for the crs. Then to use the crs pyproj is needed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="planning.load_convservation_layers">
+<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">load_convservation_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conserv_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/planning.html#load_convservation_layers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.load_convservation_layers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Author: Nata</p>
+<p>Takes user selection to load planning/ conservation layers of interest</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>conserv_layers</strong> (<em>list</em>) – Takes a list of planning layers to load.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>conserv_layers</strong> – returns a geodataframe of the selected planning layers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[gpd.GeoDataFrame]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="planning.main">
+<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/planning.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main function. Calls main_menu() which will runs until user enters 9 to exit
+Author: Mitch Albert</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="planning.plot_layers">
+<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">plot_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">planning_unit_grid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">GeoDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conserv_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filtered_conserv_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/planning.html#plot_layers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.plot_layers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display the view layers menu and allow the user to select which layers to plot.
+Author: Mitch Albert</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>planning_unit_grid</strong> (<em>gpd.GeoDataFrame</em>) – The planning unit grid.</p></li>
+<li><p><strong>conserv_layers</strong> (<em>list</em><em>[</em><em>gpd.GeoDataFrame</em><em>]</em>) – The conservation feature layers without filtering.</p></li>
+<li><p><strong>filtered_conserv_layers</strong> (<em>list</em><em>[</em><em>gpd.GeoDataFrame</em><em>]</em>) – The selected conservation features after filtering.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="planning.query_conservation_layers">
+<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">query_conservation_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conserv_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/planning.html#query_conservation_layers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.query_conservation_layers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Author: Nata</p>
+<p>Takes planning layers and user input on conservation features of interest to select by attribute and save new file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>conserv_layers</strong> (<em>list</em><em>[</em><em>gpd.GeoDataFrame</em><em>]</em>) – Takes the pre-loaded planning layers file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Returns a geodataframe of only the selected conservation features.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>TYPE</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="planning.validate_crs">
+<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">validate_crs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">crs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_crs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/planning.html#validate_crs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.validate_crs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Author: Winna
+Utility function to validate a Coordinate Reference System (CRS) and either correct it or inform users of the mismatch.</p>
+<section id="parameters">
+<h2>Parameters:<a class="headerlink" href="#parameters" title="Permalink to this heading">¶</a></h2>
+<dl class="simple">
+<dt>crs<span class="classifier">any</span></dt><dd><p>The CRS to be validated. This can be in any format, such as a string or a dictionary.</p>
+</dd>
+<dt>target_crs<span class="classifier">str</span></dt><dd><p>The target CRS that the input CRS should match.</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h2>Returns:<a class="headerlink" href="#returns" title="Permalink to this heading">¶</a></h2>
+<dl class="simple">
+<dt>bool</dt><dd><p>Returns True if the input CRS matches the target CRS, False otherwise.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Conservartion Planning Project</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">planning module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#planning.calculate"><code class="docutils literal notranslate"><span class="pre">calculate()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.calculate_overlap"><code class="docutils literal notranslate"><span class="pre">calculate_overlap()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.create_hexagon"><code class="docutils literal notranslate"><span class="pre">create_hexagon()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.create_hexgrid"><code class="docutils literal notranslate"><span class="pre">create_hexgrid()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.create_planning_unit_grid"><code class="docutils literal notranslate"><span class="pre">create_planning_unit_grid()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.crs"><code class="docutils literal notranslate"><span class="pre">crs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.load_convservation_layers"><code class="docutils literal notranslate"><span class="pre">load_convservation_layers()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.plot_layers"><code class="docutils literal notranslate"><span class="pre">plot_layers()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.query_conservation_layers"><code class="docutils literal notranslate"><span class="pre">query_conservation_layers()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.validate_crs"><code class="docutils literal notranslate"><span class="pre">validate_crs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="util.html">util module</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="intro.html" title="previous chapter">Introduction</a></li>
+      <li>Next: <a href="util.html" title="next chapter">util module</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Mitch, Lucas, Ethan, Nata, Winaa.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.1.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="_sources/planning.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
