@@ -262,6 +262,7 @@ def load_files(
                 print_info(f"Loading {file}")
                 progress = print_progress_start("Loading", dots=10, time=1)
             gdf = gpd.read_file(file)
+            gdf.name = file.split("/")[-1]
             gdfs.append(gdf)
         except Exception as e:
             print_error_msg(f"Error loading file: {file}\n")
@@ -438,9 +439,8 @@ def get_user_selection(
     :type y: int, optional
     :param bg: The background color of the Tkinter window, defaults to "#5ea5c9"
     :type bg: str, optional
-    :return: A list of selected items, or an empty list if none are selected or
-             cancel is selected. If `multi` is False, the list can contain only
-             one item.
+    :return: A list of selected items, or an empty list if none are selected. If `multi` is False,
+             the list can contain only one item.
     :rtype: list[any]
     """
     # set the selection mode
@@ -489,7 +489,6 @@ def get_user_selection(
 
     # add buttons
     Button(root, text="Finish", command=getSelected).pack(pady=20)
-    Button(root, text="Cancel", command=root.quit).pack(pady=10)
 
     # make window appear on top of all other windows and run
     root.lift()
