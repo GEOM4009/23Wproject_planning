@@ -56,11 +56,13 @@ rectangular_grid = False
 
 def crs():
     """
-
-
-    Returns
-    -------
-    None.
+  Author: Ethan
+  The user enters the crs and if it is alber equal area then they have to enter the required coordinates which it will be processed into the crs formula to create the crs which will be
+  saved as a variable called target_crs. This will make it so the rest of the functions can call this function to keep a consistent CRS. 
+  
+  Parameters:
+      
+      target crs: the formula for the crs. Then to use the crs pyproj is needed. 
 
     """
 
