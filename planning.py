@@ -195,6 +195,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
         if selection == 1:
             #user can enter the file that will define the bounds and cell area
             file = get_file(title="Select a file to load the extents from")
+            file = load_files(file, verbose)
             Area = get_user_float("Grid Cell Area (Meters Squared):")
             Prj = file.crs
             box = file.total_bounds
@@ -211,7 +212,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=Prj)
             planning_unit_grid.to_crs(crs=target_crs, inplace = True)
             # unique PUID is assigned to each hexagon
-            planning_unit_grid["PUID"] = planning_unit_grid.index + 1
+            planning_unit_grid[PUID] = planning_unit_grid.index + 1
             planning_unit_grid.name = "Planning Unit Grid"
             # planning_unit_grid.to_file("planning_unit_grid.shp")
             break
@@ -269,7 +270,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=target_crs)
             # unique PUID is assigned to each hexagon
             planning_unit_grid.name = "Planning Unit Grid"
-            planning_unit_grid["PUID"] = planning_unit_grid.index + 1
+            planning_unit_grid[PUID] = planning_unit_grid.index + 1
             #file is saved for user to reuse
             # planning_unit_grid.to_file("planning_unit_grid.shp")
             break
