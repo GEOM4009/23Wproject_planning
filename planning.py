@@ -181,6 +181,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=Prj)
 
             planning_unit_grid["PUID"] = planning_unit_grid.index + 1
+            planning_unit_grid.name = "Planning Unit Grid"
             planning_unit_grid.to_file("planning_unit_grid.shp")
             break
 
@@ -196,11 +197,6 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
                 target_crs = planning_unit_grid.crs
                 if verbose:
                     print_info(f"Hex area: {round(planning_unit_grid.geometry.area[0])}")
-                crs_text = planning_unit_grid.crs.to_string()
-
-                # Save the CRS text to a file
-                with open("my_crs.txt", "w") as f:
-                    f.write(crs_text)
             else:
                 print_warning_msg("No file loaded, please try again.")
                 continue
@@ -238,6 +234,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
                 hexagons.append(create_hexagon(edge, center[0], center[1]))
 
             planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=Prj)
+            planning_unit_grid.name = "Planning Unit Grid"
             # unique PUID is assigned to each hexagon
             planning_unit_grid["PUID"] = planning_unit_grid.index + 1
             planning_unit_grid.to_file("planning_unit_grid.shp")
@@ -741,7 +738,7 @@ def plot_layers(
                         continue
                     fig, ax = plt.subplots(figsize=(10, 10))
                     layer.plot(ax=ax)
-                    if layer.name:
+                    if hasattr(layer, 'name'):
                         ax.set_title(layer.name)
                     plt.show()
             except Exception as e:
@@ -813,7 +810,7 @@ def main():
         Author: Mitch Albert
         """
         # intialize variables
-        save = False  # flag to save the results
+        work_saved = False  # flag to save the results
         planning_unit_grid = gpd.GeoDataFrame()  # planning unit grid
         filtered_planning_unit_grid = gpd.GeoDataFrame()  # this is the planning unit grid after filtering, now obsolete
         conserv_layers = []  # list of planning layers gdfs, name will change to conservation_features
@@ -891,25 +888,40 @@ def main():
 
             # 7 Save Results
             elif selection == 7:
-                # TODO: add saving of planning unit grid
+                if not planning_unit_grid.empty:
+                    save_gdf(planning_unit_grid)
+                else:
+                    print_warning_msg("No planning unit grid to save.")
+
+                save_filtered_conserv_layers = False
+                for gdf in filtered_conserv_layers:
+                    if not gdf.empty:
+                        save_gdf(gdf)
+                        save_filtered_conserv_layers = True
+                    else:
+                        print_warning_msg("Skipping saving empty conservation feature layer.")
+                if not save_filtered_conserv_layers:
+                    print_warning_msg("No conservation feature layers to save.")
+
                 if intersections_df.empty:
-                    print_warning_msg("No results to save.")
-                    continue
-                file_name = get_save_file_name(title="Save results to csv", f_types=ft_csv)
-                # Columns names / order need to be updated to match sample file from client, waiting to receive
-                intersections_df.to_csv(
-                    file_name,
-                    header=[SPECIES, PU, AMOUNT],
-                    columns=[ID, PUID, AMOUNT],
-                    index=False,
-                )
+                    print_warning_msg("No intersection results to save.")
+                else:
+                    file_name = get_save_file_name(title="Save results to csv", f_types=ft_csv)
+                    # Columns names / order need to be updated to match sample file from client, waiting to receive
+                    intersections_df.to_csv(
+                        file_name,
+                        header=[SPECIES, PU, AMOUNT],
+                        columns=[ID, PUID, AMOUNT],
+                        index=False,
+                    )
+                    work_saved = True
                 continue
 
             # 9 Quit
             elif selection == 9:
-                quit = ''
-                if not save:
-                    print_warning_msg("No results were saved.")
+                quit = 'y'
+                if not work_saved:
+                    print_warning_msg("No overlap results were saved.")
                     quit = input("Are you sure you want to quit? (y/n): ").casefold()
                 if quit == "y":
                     break
