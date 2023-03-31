@@ -285,7 +285,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             for center in hex_centers:
                 hexagons.append(create_hexagon(edge, center[0], center[1]))
             #Geometry list is turned into a geodataframe
-            planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=target_crs)
+            planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=crs)
             # unique PUID is assigned to each hexagon
             planning_unit_grid["PUID"] = planning_unit_grid.index + 1
             #file is saved for user to reuse
