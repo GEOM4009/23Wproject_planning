@@ -12,7 +12,6 @@ NOTE: This script must be run in the geom4009 environment, but will require
 
     conda install -c conda-forge tk  --> provides the tkinter GUI
 
-TODO: Get user input to set CRS for the project
 TODO: Confirm with client if there will be any use case for an argument parser
 TODO: Add additional error handling for the different functions
 
@@ -612,8 +611,6 @@ def calculate_overlap(planning_grid: gpd.GeoDataFrame, cons_layers: list[gpd.Geo
              or if there are no intersecting features. The list will contain CORES * len(cons_layers) gdfs
     :rtype: list[gpd.GeoDataFrame]
     """
-
-    # TODO: check if planning grid and conservation layer are in same CRS
 
     # check if planning grid and conservation layers are loaded, otherwise return empty list
     if not len(cons_layers):
