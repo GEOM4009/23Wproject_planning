@@ -197,7 +197,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             file = get_file(title="Select a file to load the extents from")
             file = load_files(file, verbose)
             Area = get_user_float("Grid Cell Area (Meters Squared):")
-            Prj = file.crs
+            file.to_crs(crs=target_crs, inplace = True)
             box = file.total_bounds
             #edge length of individual hexagon is calculated using the area
             edge = math.sqrt(Area**2 / (3 / 2 * math.sqrt(3)))
@@ -209,7 +209,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             for center in hex_centers:
                 hexagons.append(create_hexagon(edge, center[0], center[1]))
             #Geometry list is turned into a geodataframe
-            planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=Prj)
+            planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs= target_crs)
             planning_unit_grid.to_crs(crs=target_crs, inplace = True)
             # unique PUID is assigned to each hexagon
             planning_unit_grid[PUID] = planning_unit_grid.index + 1
@@ -222,7 +222,8 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             file = get_file(title="Select a file to load the grid from")
             if file:
                 planning_unit_grid = load_files(file, verbose)
-                planning_unit_grid.to_crs(crs=target_crs, inplace = True)
+                target crs = planning_unit_grid.crs
+                #planning_unit_grid.to_crs(crs=target_crs, inplace = True)
                 if verbose:
                     print_info(f"Hex area: {round(planning_unit_grid.geometry.area[0])}")
             else:
