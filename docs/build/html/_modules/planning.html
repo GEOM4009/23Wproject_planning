@@ -44,7 +44,6 @@
 
 <span class="sd">    conda install -c conda-forge tk  --&gt; provides the tkinter GUI</span>
 
-<span class="sd">TODO: Get user input to set CRS for the project</span>
 <span class="sd">TODO: Confirm with client if there will be any use case for an argument parser</span>
 <span class="sd">TODO: Add additional error handling for the different functions</span>
 
@@ -98,6 +97,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="k">global</span> <span class="n">target_crs</span>
 
     <span class="c1"># Ask user for CRS</span>
     <span class="n">crs</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Enter CRS: &quot;</span><span class="p">)</span>
@@ -645,8 +645,6 @@
 <span class="sd">    :rtype: list[gpd.GeoDataFrame]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c1"># TODO: check if planning grid and conservation layer are in same CRS</span>
-
     <span class="c1"># check if planning grid and conservation layers are loaded, otherwise return empty list</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">cons_layers</span><span class="p">):</span>
         <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;No conservation feature layers loaded.&quot;</span><span class="p">)</span>
@@ -1021,9 +1019,10 @@
 <h3>Navigation</h3>
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Welcome to Conservartion Planning Project’s documentation!</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../index.html#indices-and-tables">Indices and tables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../planning.html">planning module</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../util.html">util module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">planningproj</a></li>
 </ul>
 
 <div class="relations">

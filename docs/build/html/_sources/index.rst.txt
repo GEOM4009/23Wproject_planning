@@ -10,11 +10,9 @@ Welcome to Conservartion Planning Project's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   index
    intro
-   planning
-   util
-   def
-
+   modules
 
 Indices and tables
 ==================

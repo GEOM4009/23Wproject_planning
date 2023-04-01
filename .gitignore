@@ -8,7 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-build/
+# build/
 develop-eggs/
 dist/
 downloads/
@@ -69,7 +69,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+docs/build/doctrees/
 
 # PyBuilder
 target/
@@ -135,6 +135,8 @@ data/*.prj
 data/*.qpj
 data/*.shp
 data/*.shx
+data/*.*
+data/testdata/
 BorderofNunavutRegions/
 GIS_DATA_MAPB_2021DNLUP/
 planningunit_25km/
