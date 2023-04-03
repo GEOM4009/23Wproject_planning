@@ -12,9 +12,6 @@ NOTE: This script must be run in the geom4009 environment, but will require
 
     conda install -c conda-forge tk  --> provides the tkinter GUI
 
-TODO: Confirm with client if there will be any use case for an argument parser
-TODO: Add additional error handling for the different functions
-
 """
 # Import modules
 from util import *
@@ -33,50 +30,143 @@ import geopandas as gpd
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from tqdm import tqdm
 from multiprocessing import Pool
 
 import numpy as np
 import psutil
 from functools import partial
-import pyproj
-
 
 # Global Variables
-run_tests = False
 verbose = True
 CORES = psutil.cpu_count(logical=False)
 target_crs = TARGET_CRS
-rectangular_grid = False
-
-
 
 # %% Obtain the CRS from the user
 
-def crs():
+
+def get_crs():
     """
-  Author: Ethan
-  The user enters the crs and if it is alber equal area then they have to enter the required coordinates which it will be processed into the crs formula to create the crs which will be
-  saved as a variable called target_crs. This will make it so the rest of the functions can call this function to keep a consistent CRS.
+    Author: Ethan
+    The user enters the crs and if it is alber equal area then they have to enter the required coordinates which it will be processed into the crs formula to create the crs which will be
+    saved as a variable called target_crs. This will make it so the rest of the functions can call this function to keep a consistent CRS.
 
-  Parameters:
+    Parameters:
 
-      target crs: the formula for the crs. Then to use the crs pyproj is needed.
+        target crs: the formula for the crs. Then to use the crs pyproj is needed.
 
     """
 
     global target_crs
 
-    # Ask user for CRS
-    crs = input("Enter CRS: ")
+    while True:
+        # Ask user for CRS
+        crs = input(
+            """
+        Enter a CRS to project all files.
+        1 Canada Albers Equal Area
+        2 Extract from file
+        - Any EPSG number (4087)
+        - Any Valid CRS string (e.g. 'EPSG:4087')
+        9 Quit
+    >>> """
+        )
 
-    if crs == "1":
-        # Create CRS for Albers Equal Area
-        target_crs = TARGET_CRS
-    else:
-        #for the target crs use
-        target_crs = "EPSG:" + crs
+        # Try to cast to an int
+        try:
+            crs = int(crs)
+            # Create CRS for Albers Equal Area
+            if crs == 1:
+                crs = TARGET_CRS
+
+            # extract the crs from the file
+            elif crs == 2:
+                file = get_file(title="Select a file to extract the CRS from")
+                if not file:
+                    continue
+                gdf = load_files(file)
+                if not gdf.crs:
+                    print_warning_msg("No CRS found in file. Please try again.")
+                    continue
+                crs = gdf.crs
+
+            # Quit
+            elif crs == 9:
+                print_info("Quitting...")
+                exit(0)
+
+            # If an EPSG number
+            else:
+                crs = "EPSG:" + str(crs)
+        except ValueError:
+            # This is fine, we will just try the string as the CRS
+            pass
+        # Try to create the CRS
+        try:
+            gdf = gpd.GeoDataFrame(geometry=[shapely.Point(0, 0)], crs=crs)
+            if not gdf.crs.is_projected:
+                print_warning_msg("CRS is not projected. Please try again.")
+                continue
+            else:
+                target_crs = crs
+                print_info(f"CRS set to: {gdf.crs.to_string()}")
+
+        except Exception as e:
+            print_warning_msg("Invalid CRS. Please try again.")
+            continue
+        break
+
     return
+
+
+def get_area_input() -> float:
+    """Parse user input for grid cell area.
+    Prompt user until valid input is received or quit is selected.
+    Usage: <number><suffix> (ex. 25km)
+    Suffixes: m , hm, ha, km (case insensitive)
+    Author: Mitch Albert
+
+    :return: Area in square meters
+    :rtype: float
+    """
+
+    while True:
+        input_str = input(f"Grid Cell Area in {M_SQ}, {HA}, or {KM_SQ}, enter in format <number><suffix> (ex. 25km): ")
+
+        # Remove spaces
+        input_str = input_str.replace(" ", "")
+
+        # initialize empty strings
+        num_str = ""
+        suffix_str = ""
+
+        # parse the input until we hit a non-digit or '.' character
+        for i, char in enumerate(input_str):
+            if char.isdigit() or char == ".":
+                num_str += char
+            else:
+                suffix_str = input_str[i:]
+                break
+
+        # try to convert the digit porttion to a float
+        try:
+            area = float(num_str)
+        except Exception:
+            print_warning_msg(f"Unable to parse input from string: '{input_str}', usage: <number><suffix> (ex. 250km)")
+            continue
+
+        # find a key in the suffix dictionary that starts with the suffix string
+        for key in SUFFIX_DICT.keys():
+            if key.startswith(suffix_str):
+                suffix_str = key
+        if suffix_str not in SUFFIX_DICT:
+            print_warning_msg(f"Unable to detect units, defaulting to {DEFAULT_UNITS_SQ} ({DEF_UNITS_SQ})")
+            suffix_str = DEF_UNITS_SQ
+        break
+
+    print_info(f"Area: {area}, Units: {suffix_str}")
+
+    return area * SUFFIX_DICT[suffix_str]
+
 
 # %% create a planning unit grid
 def create_hexagon(l, x, y):
@@ -93,7 +183,7 @@ def create_hexagon(l, x, y):
     return Polygon(c)
 
 
-def create_hexgrid(bbx, side):
+def create_hexgrid(bbx, area):
     """
     Author:Kadir Şahbaz
     returns an array of Points describing hexagons centers that are inside the given bounding_box
@@ -102,6 +192,8 @@ def create_hexgrid(bbx, side):
     :return: The hexagon grid
     Source:https://gis.stackexchange.com/questions/341218/creating-a-hexagonal-grid-of-regular-hexagons-of-definite-area-anywhere-on-the-g
     """
+    side = math.sqrt(area / (1.5 * math.sqrt(3)))
+
     grid = []
     v_step = math.sqrt(3) * side
     h_step = 1.5 * side
@@ -138,7 +230,7 @@ def create_hexgrid(bbx, side):
         c_y = v_start_array[v_start_idx]
         v_start_idx = (v_start_idx + 1) % 2
 
-    return grid
+    return (grid, side)
 
 
 def create_planning_unit_grid() -> gpd.GeoDataFrame:
@@ -173,6 +265,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
     """
 
     planning_unit_grid = gpd.GeoDataFrame()
+    global target_crs
 
     while True:
         try:
@@ -181,8 +274,9 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
                     """
     Create Planning Unit Grid
         1 Create Grid from Shape File extents
-        2 Load existing Grid from File
-        3 Create Grid from User Input
+        2 Create Grid from Shape File extents and clip to shape
+        3 Load existing Grid from File
+        4 Create Grid from User Input
         9 Return to Main Menu
     >>> """
                 )
@@ -192,51 +286,81 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             continue
 
         # 1 Create Grid from Shape File extents
-        if selection == 1:
-            #user can enter the file that will define the bounds and cell area
+        if selection == 1 or selection == 2:
+            # user can enter the file that will define the bounds and cell area
             file = get_file(title="Select a file to load the extents from")
+            if not file:
+                continue
             file = load_files(file, verbose)
-            Area = get_user_float("Grid Cell Area (Meters Squared):")
-            file.to_crs(crs=target_crs, inplace = True)
+
+            area = get_area_input()
+
+            file.to_crs(crs=target_crs, inplace=True)
             box = file.total_bounds
-            #edge length of individual hexagon is calculated using the area
-            edge = math.sqrt(Area**2 / (3 / 2 * math.sqrt(3)))
-            hex_centers = create_hexgrid(box, edge)
-            #Empy list is created that will contain the hexagons
-            hexagons = []
-            #centre points are iterated through the function that creates a
-            #hexagon around each of them and adds it to the list
-            for center in hex_centers:
-                hexagons.append(create_hexagon(edge, center[0], center[1]))
-            #Geometry list is turned into a geodataframe
-            planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs= target_crs)
-            planning_unit_grid.to_crs(crs=target_crs, inplace = True)
-            # unique PUID is assigned to each hexagon
-            planning_unit_grid[PUID] = planning_unit_grid.index + 1
-            planning_unit_grid.name = "Planning Unit Grid"
-            # planning_unit_grid.to_file("planning_unit_grid.shp")
+            # edge length of individual hexagon is calculated using the area
+            # edge = math.sqrt(Area**2 / (3 / 2 * math.sqrt(3)))
+
+            try:
+                if verbose:
+                    progress = print_progress_start(ABORT + "Generating Planning Unit Grid")
+
+                hex_centers, edge = create_hexgrid(box, area)
+                # Empty list is created that will contain the hexagons
+                hexagons = []
+                # centre points are iterated through the function that creates a
+                # hexagon around each of them and adds it to the list
+                for center in hex_centers:
+                    hexagons.append(create_hexagon(edge, center[0], center[1]))
+                # Geometry list is turned into a geodataframe
+                planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=target_crs)
+                planning_unit_grid.to_crs(crs=target_crs, inplace=True)
+                # unique PUID is assigned to each hexagon
+                planning_unit_grid[PUID] = planning_unit_grid.index + 1
+
+                # Clip the hexagons to the shape of the input shapefile
+                if selection == 2:
+                    hex_gdf_clipped = gpd.clip(planning_unit_grid, file)
+                    # Filter the original GeoDataFrame to only include the hexagons within the clipped area
+                    hex_ids = set(hex_gdf_clipped[PUID])
+                    planning_unit_grid = planning_unit_grid[planning_unit_grid[PUID].isin(hex_ids)]
+                    planning_unit_grid.reset_index(drop=True, inplace=True)
+                    planning_unit_grid[PUID] = planning_unit_grid.index + 1
+
+                planning_unit_grid.name = "Planning Unit Grid"
+                # planning_unit_grid.to_file("planning_unit_grid.shp")
+
+            except KeyboardInterrupt:
+                print_warning_msg(f"Grid Generation Aborted\n)")
+            except Exception as e:
+                print_warning_msg(f"Error during Grid Generation\n")
+                print(e)
+            finally:
+                if verbose:
+                    print_progress_stop(progress)
             break
 
-        # 2 Load existing Grid from File
-        elif selection == 2:
+        # 3 Load existing Grid from File
+        elif selection == 3:
             file = get_file(title="Select a file to load the grid from")
             if file:
                 planning_unit_grid = load_files(file, verbose)
-                target crs = planning_unit_grid.crs
-                #planning_unit_grid.to_crs(crs=target_crs, inplace = True)
+                target_crs = planning_unit_grid.crs
                 if verbose:
                     print_info(f"Hex area: {round(planning_unit_grid.geometry.area[0])}")
+                    print_warning_msg(f"Loaded grid will override target CRS.")
+                    print_info(f"CRS is now set to {target_crs.to_string()}.")
             else:
                 print_warning_msg("No file loaded, please try again.")
                 continue
+
             break
 
-        # 3 Create Grid from User Input
-        elif selection == 3:
+        # 4 Create Grid from User Input
+        elif selection == 4:
             # The inputs below will get the information needed to
             # create a boundary that will be filled with the hexagons as
             # well as define the hexagon cell size
-            Area = get_user_float("Grid Cell Area (Meters Squared):")
+            area = get_user_float("Grid Cell Area (Meters Squared):")
             grid_size_x = get_user_float("Grid Size X (m): ")
             grid_size_y = get_user_float("Grid Size Y (m): ")
             grid_x_coor = get_user_float("Central x coordinate (Same units of CRS): ")
@@ -245,34 +369,33 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             # coordinate to create a study area that meets the criteria
             xdiff = grid_size_x / 2
             ydiff = grid_size_y / 2
-            #Bounds of the area of interest are created by adding the half the
-            #grid size to each coordinate
+            # Bounds of the area of interest are created by adding the half the
+            # grid size to each coordinate
             xmax = grid_x_coor + xdiff
             xmin = grid_x_coor - xdiff
             ymax = grid_y_coor + ydiff
             ymin = grid_y_coor - ydiff
-            area = "POLYGON(({0} {1}, {0} {3}, {2} {3}, {2} {1}, {0} {1}))".format(
-                xmin, ymin, xmax, ymax)
-            #poly is converted to a geoseries
+            area = "POLYGON(({0} {1}, {0} {3}, {2} {3}, {2} {1}, {0} {1}))".format(xmin, ymin, xmax, ymax)
+            # poly is converted to a geoseries
             area_shply = shapely.wkt.loads(area)
             area_geos = gpd.GeoSeries(area_shply)
             box = area_geos.total_bounds
-            #edge length of individual hexagon is calculated using the area
-            edge = math.sqrt(Area**2 / (3 / 2 * math.sqrt(3)))
-            #grid is created that has the central points of each hexagon
-            hex_centers = create_hexgrid(box, edge)
-            #Empty list that will contain the hexagon geometry
+            # edge length of individual hexagon is calculated using the area
+            # edge = math.sqrt(Area**2 / (3 / 2 * math.sqrt(3)))
+            # grid is created that has the central points of each hexagon
+            hex_centers, edge = create_hexgrid(box, area)
+            # Empty list that will contain the hexagon geometry
             hexagons = []
-            #centre points are iterated through the function that creates a
-            #hexagon around each of them and adds it to the list
+            # centre points are iterated through the function that creates a
+            # hexagon around each of them and adds it to the list
             for center in hex_centers:
                 hexagons.append(create_hexagon(edge, center[0], center[1]))
-            #Geometry list is turned into a geodataframe
+            # Geometry list is turned into a geodataframe
             planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=target_crs)
             # unique PUID is assigned to each hexagon
             planning_unit_grid.name = "Planning Unit Grid"
             planning_unit_grid[PUID] = planning_unit_grid.index + 1
-            #file is saved for user to reuse
+            # file is saved for user to reuse
             # planning_unit_grid.to_file("planning_unit_grid.shp")
             break
 
@@ -397,21 +520,16 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
 
 
 # %% Load conservation feature layers from file
-def load_convservation_layers(conserv_layers: list) -> list[gpd.GeoDataFrame]:
+def load_convservation_layers() -> list[gpd.GeoDataFrame]:
     """
     Author: Nata
 
     Takes user selection to load planning/ conservation layers of interest
 
-    Parameters
-    ----------
-    conserv_layers : list
-        Takes a list of planning layers to load.
-
     Returns
     -------
     conserv_layers : list[gpd.GeoDataFrame]
-        returns a geodataframe of the selected planning layers.
+        returns a geodataframe of the selected conservation feature layers.
 
     """
     # get list of files to load
@@ -420,7 +538,7 @@ def load_convservation_layers(conserv_layers: list) -> list[gpd.GeoDataFrame]:
             selection = int(
                 input(
                     """
-    Load Planning Layers
+    Load Conservation Feature Layers
         1 Select Files
         2 All from Directory
         9 Return to Main Menu
@@ -433,11 +551,11 @@ def load_convservation_layers(conserv_layers: list) -> list[gpd.GeoDataFrame]:
 
         # 1 Select Files
         if selection == 1:
-            files = get_files(title="Select planning layer files")
+            files = get_files(title="Select Conservation Feature files")
             if files:
                 conserv_layers = load_files(files, verbose)
             else:
-                print_warning_msg("No files loaded from directory, please verify files and try again.")
+                print_warning_msg("No files loaded, please verify files and try again.")
                 continue
             break
 
@@ -458,9 +576,8 @@ def load_convservation_layers(conserv_layers: list) -> list[gpd.GeoDataFrame]:
             print_warning_msg(msg_value_error)
             continue
 
-    projected_layers = []
-    for layer in conserv_layers:
-        projected_layers.append(layer.to_crs(target_crs))
+    projected_layers = project_gdfs(conserv_layers)
+
     return projected_layers
 
 
@@ -471,12 +588,12 @@ def query_conservation_layers(
     """
     Author: Nata
 
-    Takes planning layers and user input on conservation features of interest to select by attribute and save new file
+    Takes conservation feature layers and user input on conservation features of interest to select by attribute and save new file
 
     Parameters
     ----------
     conserv_layers : list[gpd.GeoDataFrame]
-        Takes the pre-loaded planning layers file.
+        The pre-loaded conservation feature layers files.
 
     Returns
     -------
@@ -486,7 +603,7 @@ def query_conservation_layers(
     """
 
     if not len(conserv_layers):
-        print_warning_msg("No planning layers loaded.")
+        print_warning_msg("No conservation feature layers loaded.")
         return []
 
     # This will reset the list of layers to the original loaded layers every time
@@ -494,26 +611,33 @@ def query_conservation_layers(
     for layer in conserv_layers:
         filtered_conserv_layers.append(layer.copy(deep=True))
     for i in range(len(conserv_layers)):
-        filtered_conserv_layers[i].name = conserv_layers[i].name
+        filtered_conserv_layers[i].name = "".join(conserv_layers[i].name.split(".")[:-1])+"_filtered" if hasattr(conserv_layers[i], "name") else f"filtered_{i}"
 
     attribute = ""
 
     def filter_by_attribute(conserv_layers: list[gpd.GeoDataFrame], attribute: any) -> list[gpd.GeoDataFrame]:
         filter = []
         for gdf in conserv_layers:
-            for attr in gdf[attribute].unique():
-                filter.append(attr)
+            if gdf.empty:
+                continue
+            if attribute in gdf.columns:
+                filter.extend(gdf[attribute].unique())
+        filter = list(set(filter))
+        filter.sort()
 
         chosenFeatures = get_user_selection(filter, multi=True, title="Select features to keep")
-
         filtered_gdf_list = []
-        for gdf in conserv_layers:
-            if attribute in gdf.columns:
-                filtered_gdf = gdf[gdf[attribute].astype(str).isin(chosenFeatures)]
-                filtered_gdf.name = gdf.name
-                filtered_gdf_list.append(filtered_gdf)
-            else:
-                print_warning_msg(f"Attribute {attribute} not found in {gdf.name}")
+        if not chosenFeatures:
+            print_warning_msg("No features selected.")
+            filtered_gdf_list = conserv_layers
+        else:
+            for gdf in conserv_layers:
+                if attribute in gdf.columns:
+                    filtered_gdf = gdf[gdf[attribute].astype(str).isin(chosenFeatures)]
+                    filtered_gdf.name = gdf.name if hasattr(gdf, "name") else ""
+                    filtered_gdf_list.append(filtered_gdf)
+                else:
+                    print_warning_msg(f"Attribute {attribute} not found in gdf {gdf.name}")
         return filtered_gdf_list
 
     while True:
@@ -521,7 +645,7 @@ def query_conservation_layers(
             selection = int(
                 input(
                     """
-    Query Planning Layers
+    Query Conservation Feature Layers
         1 ID
         2 CLASS_TYPE
         3 GROUP_
@@ -557,6 +681,8 @@ def query_conservation_layers(
             for gdf in conserv_layers:
                 column_names.extend(list(gdf.columns))
             column_names = list(set(column_names))
+            column_names.remove(GEOMETRY)
+            column_names.sort()
             sel = get_user_selection(column_names, title="Select attribute to filter by")
             attribute = sel[0] if sel else ""
             break
@@ -568,7 +694,9 @@ def query_conservation_layers(
             continue
 
     if attribute:
-        filtered_conserv_layers = filter_by_attribute(conserv_layers, attribute)
+        filtered_conserv_layers = filter_by_attribute(filtered_conserv_layers, attribute)
+        for layer in filtered_conserv_layers:
+            print(f"{layer.name}")
 
     return filtered_conserv_layers
 
@@ -590,13 +718,14 @@ def calculate(planning_grid: gpd.GeoDataFrame, cons_layers: list[gpd.GeoDataFram
     intersections = []
     for layer in cons_layers:
         if not layer.empty:
-            clipped_grid = gpd.clip(planning_grid, layer.geometry.convex_hull)  # this may not improve performance
+            clipped_grid = gpd.clip(planning_grid, layer.geometry.convex_hull)
             intersection = gpd.overlay(clipped_grid, layer, how="intersection")
             intersection[AMOUNT] = intersection.area
             intersection[AMOUNT] = intersection[AMOUNT].round().astype(int)
             intersections.append(intersection)
         else:
             print_warning_msg("Skipping empty conservation layer.")
+
     return intersections
 
 
@@ -643,9 +772,22 @@ def calculate_overlap(planning_grid: gpd.GeoDataFrame, cons_layers: list[gpd.Geo
         for result in pool.imap_unordered(calc_overlap_partial, planning_grid_divisions):
             intersections.extend(result)
 
+    # sort the results by PUID, ID, and AMOUNT
+    for i in range(len(intersections)):
+        intersections[i] = intersections[i].sort_values([PUID, ID, AMOUNT])
+
     if verbose:
         print_progress_stop(progress)
         print_info_complete(f"Intersection calculations completed in: {(time() - start_time):.2f} seconds")
+
+    # check if any results were found
+    results = False
+    for layer in intersections:
+        if not layer.empty:
+            results = True
+            break
+    if not results:
+        print_warning_msg("No intersecting features found.")
 
     return intersections
 
@@ -761,16 +903,22 @@ def plot_layers(
         if len(layers):
             try:
                 if verbose:
-                    progress = print_progress_start("Plotting", dots=3)
+                    progress = print_progress_start(ABORT + "Plotting", dots=3)
                 for layer in layers:
                     if layer.empty:
                         print_warning_msg("Nothing to plot.")
                         continue
-                    fig, ax = plt.subplots(figsize=(10, 10))
-                    layer.plot(ax=ax)
-                    if hasattr(layer, 'name'):
+                    # get the column name to colour plot if it exists
+                    if MAP_COLUMN in list(layer.columns):
+                        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+                        layer.plot(column=MAP_COLUMN, ax=ax, categorical=True, legend=True)
+                    else:
+                        ax = layer.plot(figsize=(10, 10))
+                    if hasattr(layer, "name"):
                         ax.set_title(layer.name)
                     plt.show()
+            except KeyboardInterrupt:
+                print_warning_msg(f"Plotting Aborted\n")
             except Exception as e:
                 print_warning_msg(f"Error while plotting\n")
                 print(e)
@@ -826,6 +974,20 @@ def plot_layers(
     return
 
 
+def project_gdfs(gdfs: list[gpd.GeoDataFrame], crs=target_crs) -> list[gpd.GeoDataFrame]:
+    projected_gdfs = []
+    for gdf in gdfs:
+        if gdf.crs != crs:
+            name = gdf.name if hasattr(gdf, "name") else ""
+            print_info(f"Projecting {name} to {crs}")
+            projected_gdfs.append(gdf.to_crs(crs))
+        else:
+            projected_gdfs.append(gdf.copy(deep=True))
+        if hasattr(gdf, "name"):
+            projected_gdfs[-1].name = gdf.name
+    return projected_gdfs
+
+
 # %% Main
 def main():
     """Main function. Calls main_menu() which will runs until user enters 9 to exit
@@ -843,14 +1005,14 @@ def main():
         work_saved = False  # flag to save the results
         planning_unit_grid = gpd.GeoDataFrame()  # planning unit grid
         filtered_planning_unit_grid = gpd.GeoDataFrame()  # this is the planning unit grid after filtering, now obsolete
-        conserv_layers = []  # list of planning layers gdfs, name will change to conservation_features
+        conserv_layers = []  # list of conservation feature layers gdfs, name will change to conservation_features
         filtered_conserv_layers = []  # this is list of conservation_features gdfs after filtering
         intersections_gdf = []  # list of gdfs of planning unit / conservation feature intersections
         intersections_df = (
             pd.DataFrame()
         )  # dataframe of planning unit / conservation feature intersections, used to easy csv export
 
-        # target_crs = get_crs()
+        get_crs()
 
         while True:
             try:
@@ -859,12 +1021,11 @@ def main():
                         """
     Main Menu:
         1 Create Planning Unit Grid
-        2 Select Planning Units
-        3 Load Conservation Features Files
-        4 Select Conservation Features
-        5 View Layers
-        6 Calculate Overlap
-        7 Save Results
+        2 Load Conservation Features Files
+        3 Filter Conservation Features
+        4 View Layers
+        5 Calculate Overlap
+        6 Save Results
         9 Quit
     >>> """
                     )
@@ -876,61 +1037,90 @@ def main():
             # 1 Create Planning Unit GridFeatures
             if selection == 1:
                 planning_unit_grid = create_planning_unit_grid()
+                conserv_layers = project_gdfs(conserv_layers)
+                filtered_conserv_layers = project_gdfs(filtered_conserv_layers)
                 continue
 
-            # 2 Select Planning Units
-            elif selection == 2:
+                # 2 Select Planning Units
+                # elif selection == 2:
                 # NOTE: this is now obsolete, but only commenting out for now
                 # filtered_planning_unit_grid = select_planning_units(planning_unit_grid)
                 continue
 
-            # 3 Load Conservation Features Files
-            elif selection == 3:
-                conserv_layers = load_convservation_layers(conserv_layers)
+            # 2 Load Conservation Features Files
+            elif selection == 2:
+                conserv_layers = load_convservation_layers()
                 for layer in conserv_layers:
                     filtered_conserv_layers.append(layer.copy(deep=True))
                 for i in range(len(conserv_layers)):
-                    filtered_conserv_layers[i].name = conserv_layers[i].name
+                    filtered_conserv_layers[i].name = (
+                        conserv_layers[i].name if hasattr(conserv_layers[i], "name") else ""
+                    )
                 continue
 
-            # 4 Select conservation features
-            elif selection == 4:
+            # 3 Select conservation features
+            elif selection == 3:
                 filtered_conserv_layers = query_conservation_layers(conserv_layers)
                 continue
 
-            # 5 View Layers
-            elif selection == 5:
+            # 4 View Layers
+            elif selection == 4:
                 plot_layers(planning_unit_grid, conserv_layers, filtered_conserv_layers)
                 continue
 
-            # 6 Calculate Overlap
-            elif selection == 6:
+            # 5 Calculate Overlap
+            elif selection == 5:
                 intersections_gdf = calculate_overlap(planning_unit_grid, filtered_conserv_layers)
                 if len(intersections_gdf):
                     intersections_df = pd.DataFrame(gpd.GeoDataFrame(pd.concat(intersections_gdf, ignore_index=True)))
                 continue
 
-            # 7 Save Results
-            elif selection == 7:
+            # 6 Save Results
+            elif selection == 6:
                 if not planning_unit_grid.empty:
-                    save_gdf(planning_unit_grid)
+                    initial_file = (
+                        planning_unit_grid.name if hasattr(planning_unit_grid, "name") else "planning_unit_grid"
+                    )
+                    if not save_gdf(
+                        planning_unit_grid,
+                        title="Save planning unit grid to file",
+                        initialfile=initial_file,
+                        verbose=verbose,
+                    ):
+                        print_warning_msg("Planning unit grid not saved.")
+                    # TODO: add check to see if planning unit grid was already from file
+                    # if from file, then don't save planning unit grid unless it
+                    # was projected to a different crs
                 else:
                     print_warning_msg("No planning unit grid to save.")
 
-                save_filtered_conserv_layers = False
-                for gdf in filtered_conserv_layers:
-                    if not gdf.empty:
-                        save_gdf(gdf)
-                        save_filtered_conserv_layers = True
-                    else:
-                        print_warning_msg("Skipping saving empty conservation feature layer.")
-                if not save_filtered_conserv_layers:
+                if len(filtered_conserv_layers):
+                    for i in range(len(filtered_conserv_layers)):
+                        if not filtered_conserv_layers[i].empty:
+                            initial_file = (
+                                filtered_conserv_layers[i].name
+                                if hasattr(filtered_conserv_layers[i], "name")
+                                else "conservation_layer" + str(i)
+                            )
+                            if not save_gdf(
+                                filtered_conserv_layers[i],
+                                title="Save filtered conservation feature layer to file",
+                                initialfile=initial_file,
+                                verbose=verbose,
+                            ):
+                                print_warning_msg("Conservation feature layer not saved.")
+                        else:
+                            print_warning_msg("Skipping saving empty conservation feature layer.")
+                else:
                     print_warning_msg("No conservation feature layers to save.")
 
                 if intersections_df.empty:
                     print_warning_msg("No intersection results to save.")
                 else:
-                    file_name = get_save_file_name(title="Save results to csv", f_types=ft_csv)
+                    print_info(f"Saving results")
+                    file_name = get_save_file_name(
+                        title="Save results to csv", f_types=ft_csv, initialfile=DEFAULT_RESULTS_FILE_NAME
+                    )
                     intersections_df.to_csv(
                         file_name,
                         header=[SPECIES, PU, AMOUNT],
@@ -942,7 +1132,7 @@ def main():
 
             # 9 Quit
             elif selection == 9:
-                quit = 'y'
+                quit = "y"
                 if not work_saved:
                     print_warning_msg("No overlap results were saved.")
                     quit = input("Are you sure you want to quit? (y/n): ").casefold()
@@ -962,9 +1152,6 @@ def main():
 
 
 if __name__ == "__main__":
-    if run_tests:
-        input("\nTESTING COMPLETE")
-    else:
-        main()
+    main()
 
 # %%

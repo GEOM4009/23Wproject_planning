@@ -228,7 +228,10 @@ def get_top_root() -> Tk:
     root.focus_force()
     return root
 
-def save_gdf(gdf: gpd.GeoDataFrame) -> None:
+
+def save_gdf(
+    gdf: gpd.GeoDataFrame, title: str = "Save GeoDataFrame", initialfile="", verbose=True
+) -> None:
     """Save a GeoDataFrame to a file. The user is prompted to select a file name and
     file type. The file type is determined by the file extension. The supported file
     types are shapefile and geopackage.
@@ -237,22 +240,37 @@ def save_gdf(gdf: gpd.GeoDataFrame) -> None:
     :param gdf: The GeoDataFrame to save.
     :type gdf: gpd.GeoDataFrame
     """
-    if hasattr(gdf, 'name'):
-        print_info(f"Saving {gdf.name}...")
-    else:
-        gdf.name = ""
-    file_name = get_save_file_name(title=f"Saving {gdf.name}", f_types=ft_standard)
-    if file_name:
-        ext = file_name.split(".")[-1]
-        if ext == SHAPE_DRIVER:
-            gdf.to_file(file_name)
-        elif ext == GPKG_DRIVER:
-            gdf.to_file(file_name, driver=GPKG_DRIVER)
+    saved = False
+    try:
+        if hasattr(gdf, "name"):
+            print_info(f"Saving {gdf.name}...")
         else:
-            print_warning_msg("Skipping file save. File type not supported.")
-    else:
-        print_warning_msg("Skipping file save. File name not provided.")
-    return
+            gdf.name = ""
+        if verbose:
+            progress = print_progress_start(ABORT + "Saving")
+        file_name = get_save_file_name(title=title, f_types=ft_standard, initialfile=initialfile)
+        if file_name:
+            ext = file_name.split(".")[-1]
+            if ext == SHAPE_DRIVER:
+                gdf.to_file(file_name)
+                saved = True
+            elif ext == GPKG_DRIVER:
+                gdf.to_file(file_name, driver=GPKG_DRIVER)
+                saved = True
+            else:
+                print_warning_msg("Skipping file save. File type not supported.")
+        else:
+            print_warning_msg("Skipping file save. File name not provided.")
+
+    except KeyboardInterrupt:
+        print_warning_msg("Saving aborted. Skipping file save.")
+    except Exception as e:
+        print_error_msg(f"Error saving GeoDataFrame: {e}")
+    finally:
+        if verbose:
+            print_progress_stop(progress)
+
+    return saved
 
 
 def load_files(
@@ -283,6 +301,7 @@ def load_files(
         single_file = True
 
     for file in files:
+        loaded = False
         try:
             if verbose:
                 print_info(f"Loading {file}")
@@ -297,10 +316,11 @@ def load_files(
         finally:
             if verbose:
                 print_progress_stop(progress)
-                print_info_complete(f"Loading {file.split('/')[-1]} complete")
-                print_info(f"CRS: {gdf.crs}")
-                print_info(f"Shape: {gdf.shape[0]} Rows, {gdf.shape[1]} Columns")
-                print_info("Columns: " + ", ".join(str(col) for col in gdf.columns))
+                if loaded:
+                    print_info_complete(f"Loading {file.split('/')[-1]} complete")
+                    print_info(f"CRS: {gdf.crs}")
+                    print_info(f"Shape: {gdf.shape[0]} Rows, {gdf.shape[1]} Columns")
+                    print_info("Columns: " + ", ".join(str(col) for col in gdf.columns))
 
     return gdfs[0] if single_file else gdfs
 
@@ -362,7 +382,10 @@ def get_files(
     if not multi:
         files = (files,)
     root.destroy()
-    return list(files) if len(files) else None
+    files = list(files) if files != ("",) else None
+    if not files:
+        print_warning_msg("File selection canceled.")
+    return files
 
 
 def get_files_from_dir(
@@ -404,14 +427,17 @@ def get_files_from_dir(
                 for file in f_list:
                     files.append(path.join(getcwd(), file))
     chdir(wd)
-
-    return files if len(files) else None
+    files = files if len(files) else None
+    if not files:
+        print_warning_msg("File selection canceled.")
+    return files
 
 
 def get_save_file_name(
     f_types: tuple[str, str] | list[tuple[str, str]] = ft_standard_save,
     title: str = "Save File",
     initialdir: str = getcwd(),
+    initialfile="",
 ) -> str:
     """Open a tkinter file dialog for the user to indicate where and what to
     save a file as.
@@ -431,6 +457,7 @@ def get_save_file_name(
     root = get_top_root()
     file = tkinter.filedialog.asksaveasfilename(
         confirmoverwrite=True,
+        initialfile=initialfile,
         initialdir=initialdir,
         title=title,
         defaultextension=ft_standard_save[0][1],
