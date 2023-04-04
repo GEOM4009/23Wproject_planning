@@ -235,15 +235,13 @@ def create_hexgrid(bbx, area):
 
 def create_planning_unit_grid() -> gpd.GeoDataFrame:
     """
-    Author: Lucas
-    This function will take user input to create a hexagonal planning
+    Author: Lucas McPhail
+    Take user input to create a hexagonal planning
     grid that is defined by a central coordinate, cell resolution,
-    and grid height and width. A unique Planning unit ID is then given
-    to each hexagon and the final grid can be output to a shapefile.
+    and grid height and width.
     It can also create this grid using other methods, such as taking a
     shapefile as input, the CRS and the bounds of that file will be
-    determined and used to create the planning grid. Additionally a
-    previously created grid can be input by the user
+    determined and used to create the planning grid. 
     Parameters
     ----------
     Area: float
@@ -259,8 +257,8 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
         y coordinate for center of grid
     Returns
     -------
-    TYPE
-        Description
+    planning_unit_grid: gpd.GeoDataFrame
+        hexagon grid shapefile that matches the dimensions specified by the user
 
     """
 
