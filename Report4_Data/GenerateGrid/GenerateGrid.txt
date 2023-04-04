@@ -3,9 +3,9 @@
 ├───Input
 │       BorderofNunavutRegions.shp
 │
-└───Output 
+└───Output
 	Planning_Unit_Grid_2500-0hm2.shp
-        Planning_Unit_Grid_2500-0km2.shp
+	Planning_Unit_Grid_2500-0km2.shp
 	Planning_Unit_Grid_2500-0km2_clipped.shp
 
 Generate Planning Unit Grid Tests
@@ -14,8 +14,8 @@ Generate Planning Unit Grid Tests
 1 Create Grid from Shape File extents:
 
 Start program
->>> 1 (enter) 
->>> 1 (enter) 
+>>> 1 (enter)
+>>> 1 (enter)
 >>> 1 (enter)
 >>> Select 'BorderofNunavutRegions.shp'
 >>> 2500km (enter)
@@ -28,8 +28,8 @@ Start program
 2 Create Grid from Shape File extents and clip to shape:
 
 Start program
->>> 1 (enter) 
->>> 1 (enter) 
+>>> 1 (enter)
+>>> 1 (enter)
 >>> 2 (enter)
 >>> Select 'BorderofNunavutRegions.shp'
 >>> 2500km (enter)
@@ -42,8 +42,8 @@ Start program
 4 Create Grid from User Input:
 
 Start program
->>> 1 (enter) 
->>> 1 (enter) 
+>>> 1 (enter)
+>>> 1 (enter)
 >>> 4 (enter)
 >>> 2500hm (enter)
 >>> 2000 (enter)

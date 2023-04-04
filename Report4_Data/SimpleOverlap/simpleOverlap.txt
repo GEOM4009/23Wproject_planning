@@ -1,0 +1,34 @@
+│   simpleOverlap.txt
+│
+├───Input
+│   ├───conservationLayer
+│   │       2021DNLUP_MAPB1_VEC_partial.shp
+│   │
+│   └───smallGrid
+│           smallGrid.shp
+│
+└───Output
+        2021DNLUP_MAPB1_VEC_partial_filtered.shp
+        marxan_results.csv
+
+Simple Overlap Calculations:
+
+Start program
+>>> 1 (enter)
+>>> 1 (enter)
+>>> 3 (enter)
+>>> Select 'Input/smallGrid/smallGrid.shp'
+>>> 2 (enter)
+>>> 1 (enter)
+>>> Select 'Input/conservationLayer/2021DNLUP_MAPB1_VEC_partial.shp'
+>>> 3 (enter)
+>>> 1 (enter)
+>>> click 215 and 401 (note that crtl or shift are not needed for multiselect)
+>>> click Finish
+>>> 5 (enter)
+>>> 6 (enter)
+>>> Cancel saving the planning unit grid
+>>> Save filterd Conservation layer to: Output/2021DNLUP_MAPB1_VEC_partial_filtered.shp
+>>> Save csv results to: Output/marxan_results.csv
+>>> 9 (enter)
+>>> y (enter)
