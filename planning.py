@@ -546,6 +546,8 @@ def load_convservation_layers() -> list[gpd.GeoDataFrame]:
         returns a geodataframe of the selected conservation feature layers.
 
     """
+    conserv_layers = [] # list to hold conservation feature layers
+
     # get list of files to load
     while True:
         try:
