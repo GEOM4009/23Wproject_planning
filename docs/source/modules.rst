@@ -4,6 +4,3 @@ planningproj
 .. toctree::
    :maxdepth: 4
 
-   defs
-   planning
-   util

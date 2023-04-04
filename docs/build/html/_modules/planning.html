@@ -44,9 +44,6 @@
 
 <span class="sd">    conda install -c conda-forge tk  --&gt; provides the tkinter GUI</span>
 
-<span class="sd">TODO: Confirm with client if there will be any use case for an argument parser</span>
-<span class="sd">TODO: Add additional error handling for the different functions</span>
-
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="c1"># Import modules</span>
 <span class="kn">from</span> <span class="nn">util</span> <span class="kn">import</span> <span class="o">*</span>
@@ -65,50 +62,143 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
-<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
 <span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Pool</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">psutil</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">import</span> <span class="nn">pyproj</span>
-
 
 <span class="c1"># Global Variables</span>
-<span class="n">run_tests</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="n">verbose</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="n">CORES</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">(</span><span class="n">logical</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">target_crs</span> <span class="o">=</span> <span class="n">TARGET_CRS</span>
-<span class="n">rectangular_grid</span> <span class="o">=</span> <span class="kc">False</span>
-
-
 
 <span class="c1"># %% Obtain the CRS from the user</span>
 
-<div class="viewcode-block" id="crs"><a class="viewcode-back" href="../planning.html#planning.crs">[docs]</a><span class="k">def</span> <span class="nf">crs</span><span class="p">():</span>
+
+<div class="viewcode-block" id="get_crs"><a class="viewcode-back" href="../planning.html#planning.get_crs">[docs]</a><span class="k">def</span> <span class="nf">get_crs</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">  Author: Ethan</span>
-<span class="sd">  The user enters the crs and if it is alber equal area then they have to enter the required coordinates which it will be processed into the crs formula to create the crs which will be</span>
-<span class="sd">  saved as a variable called target_crs. This will make it so the rest of the functions can call this function to keep a consistent CRS.</span>
+<span class="sd">    Author: Ethan</span>
+<span class="sd">    The user enters the crs and if it is alber equal area then they have to enter the required coordinates which it will be processed into the crs formula to create the crs which will be</span>
+<span class="sd">    saved as a variable called target_crs. This will make it so the rest of the functions can call this function to keep a consistent CRS.</span>
 
-<span class="sd">  Parameters:</span>
+<span class="sd">    Parameters:</span>
 
-<span class="sd">      target crs: the formula for the crs. Then to use the crs pyproj is needed.</span>
+<span class="sd">        target crs: the formula for the crs. Then to use the crs pyproj is needed.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">global</span> <span class="n">target_crs</span>
 
-    <span class="c1"># Ask user for CRS</span>
-    <span class="n">crs</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Enter CRS: &quot;</span><span class="p">)</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># Ask user for CRS</span>
+        <span class="n">crs</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enter a CRS to project all files.</span>
+<span class="sd">        1 Canada Albers Equal Area</span>
+<span class="sd">        2 Extract from file</span>
+<span class="sd">        - Any EPSG number (4087)</span>
+<span class="sd">        - Any Valid CRS string (e.g. &#39;EPSG:4087&#39;)</span>
+<span class="sd">        9 Quit</span>
+<span class="sd">    &gt;&gt;&gt; &quot;&quot;&quot;</span>
+        <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">crs</span> <span class="o">==</span> <span class="s2">&quot;1&quot;</span><span class="p">:</span>
-        <span class="c1"># Create CRS for Albers Equal Area</span>
-        <span class="n">target_crs</span> <span class="o">=</span> <span class="n">TARGET_CRS</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c1">#for the target crs use</span>
-        <span class="n">target_crs</span> <span class="o">=</span> <span class="s2">&quot;EPSG:&quot;</span> <span class="o">+</span> <span class="n">crs</span>
+        <span class="c1"># Try to cast to an int</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">crs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">crs</span><span class="p">)</span>
+            <span class="c1"># Create CRS for Albers Equal Area</span>
+            <span class="k">if</span> <span class="n">crs</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">crs</span> <span class="o">=</span> <span class="n">TARGET_CRS</span>
+
+            <span class="c1"># extract the crs from the file</span>
+            <span class="k">elif</span> <span class="n">crs</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">file</span> <span class="o">=</span> <span class="n">get_file</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Select a file to extract the CRS from&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">file</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">gdf</span> <span class="o">=</span> <span class="n">load_files</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">gdf</span><span class="o">.</span><span class="n">crs</span><span class="p">:</span>
+                    <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;No CRS found in file. Please try again.&quot;</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="n">crs</span> <span class="o">=</span> <span class="n">gdf</span><span class="o">.</span><span class="n">crs</span>
+
+            <span class="c1"># Quit</span>
+            <span class="k">elif</span> <span class="n">crs</span> <span class="o">==</span> <span class="mi">9</span><span class="p">:</span>
+                <span class="n">print_info</span><span class="p">(</span><span class="s2">&quot;Quitting...&quot;</span><span class="p">)</span>
+                <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="c1"># If an EPSG number</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">crs</span> <span class="o">=</span> <span class="s2">&quot;EPSG:&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">crs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="c1"># This is fine, we will just try the string as the CRS</span>
+            <span class="k">pass</span>
+        <span class="c1"># Try to create the CRS</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">gdf</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><span class="p">[</span><span class="n">shapely</span><span class="o">.</span><span class="n">Point</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)],</span> <span class="n">crs</span><span class="o">=</span><span class="n">crs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">gdf</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">is_projected</span><span class="p">:</span>
+                <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;CRS is not projected. Please try again.&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">target_crs</span> <span class="o">=</span> <span class="n">crs</span>
+                <span class="n">print_info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CRS set to: </span><span class="si">{</span><span class="n">gdf</span><span class="o">.</span><span class="n">crs</span><span class="o">.</span><span class="n">to_string</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;Invalid CRS. Please try again.&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="k">break</span>
+
     <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="get_area_input"><a class="viewcode-back" href="../planning.html#planning.get_area_input">[docs]</a><span class="k">def</span> <span class="nf">get_area_input</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse user input for grid cell area.</span>
+<span class="sd">    Prompt user until valid input is received or quit is selected.</span>
+<span class="sd">    Usage: &lt;number&gt;&lt;suffix&gt; (ex. 25km)</span>
+<span class="sd">    Suffixes: m , hm, ha, km (case insensitive)</span>
+<span class="sd">    Author: Mitch Albert</span>
+
+<span class="sd">    :return: Area in square meters</span>
+<span class="sd">    :rtype: float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">input_str</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Grid Cell Area in </span><span class="si">{</span><span class="n">M_SQ</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">HM_SQ</span><span class="si">}</span><span class="s2">, or </span><span class="si">{</span><span class="n">KM_SQ</span><span class="si">}</span><span class="s2">, enter in format &lt;number&gt;&lt;suffix&gt; (ex. 25km): &quot;</span><span class="p">)</span>
+
+        <span class="c1"># Remove spaces</span>
+        <span class="n">input_str</span> <span class="o">=</span> <span class="n">input_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="c1"># initialize empty strings</span>
+        <span class="n">num_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">suffix_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="c1"># parse the input until we hit a non-digit or &#39;.&#39; character</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">char</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">input_str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">char</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span> <span class="ow">or</span> <span class="n">char</span> <span class="o">==</span> <span class="s2">&quot;.&quot;</span><span class="p">:</span>
+                <span class="n">num_str</span> <span class="o">+=</span> <span class="n">char</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">suffix_str</span> <span class="o">=</span> <span class="p">(</span><span class="n">input_str</span><span class="p">[</span><span class="n">i</span><span class="p">:])[:</span><span class="mi">2</span><span class="p">]</span>
+                <span class="k">break</span>
+
+        <span class="c1"># try to convert the digit porttion to a float</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">area</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">num_str</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">print_warning_msg</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unable to parse input from string: &#39;</span><span class="si">{</span><span class="n">input_str</span><span class="si">}</span><span class="s2">&#39;, usage: &lt;number&gt;&lt;suffix&gt; (ex. 250km)&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># find a key in the suffix dictionary that starts with the suffix string</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">SUFFIX_DICT</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">suffix_str</span><span class="p">):</span>
+                <span class="n">suffix_str</span> <span class="o">=</span> <span class="n">key</span>
+        <span class="k">if</span> <span class="n">suffix_str</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SUFFIX_DICT</span><span class="p">:</span>
+            <span class="n">print_warning_msg</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unable to detect units, defaulting to </span><span class="si">{</span><span class="n">DEFAULT_UNITS_SQ</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">DEF_UNITS_SQ</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="n">suffix_str</span> <span class="o">=</span> <span class="n">DEF_UNITS_SQ</span>
+        <span class="k">break</span>
+
+    <span class="n">print_info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Area: </span><span class="si">{</span><span class="n">area</span><span class="si">}</span><span class="s2">, Units: </span><span class="si">{</span><span class="n">suffix_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">area</span> <span class="o">*</span> <span class="n">SUFFIX_DICT</span><span class="p">[</span><span class="n">suffix_str</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">suffix_str</span><span class="p">)</span></div>
+
 
 <span class="c1"># %% create a planning unit grid</span>
 <div class="viewcode-block" id="create_hexagon"><a class="viewcode-back" href="../planning.html#planning.create_hexagon">[docs]</a><span class="k">def</span> <span class="nf">create_hexagon</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
@@ -125,7 +215,7 @@
     <span class="k">return</span> <span class="n">Polygon</span><span class="p">(</span><span class="n">c</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="create_hexgrid"><a class="viewcode-back" href="../planning.html#planning.create_hexgrid">[docs]</a><span class="k">def</span> <span class="nf">create_hexgrid</span><span class="p">(</span><span class="n">bbx</span><span class="p">,</span> <span class="n">side</span><span class="p">):</span>
+<div class="viewcode-block" id="create_hexgrid"><a class="viewcode-back" href="../planning.html#planning.create_hexgrid">[docs]</a><span class="k">def</span> <span class="nf">create_hexgrid</span><span class="p">(</span><span class="n">bbx</span><span class="p">,</span> <span class="n">area</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Author:Kadir Şahbaz</span>
 <span class="sd">    returns an array of Points describing hexagons centers that are inside the given bounding_box</span>
@@ -134,6 +224,8 @@
 <span class="sd">    :return: The hexagon grid</span>
 <span class="sd">    Source:https://gis.stackexchange.com/questions/341218/creating-a-hexagonal-grid-of-regular-hexagons-of-definite-area-anywhere-on-the-g</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">side</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">area</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.5</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)))</span>
+
     <span class="n">grid</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">v_step</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">side</span>
     <span class="n">h_step</span> <span class="o">=</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">side</span>
@@ -170,20 +262,18 @@
         <span class="n">c_y</span> <span class="o">=</span> <span class="n">v_start_array</span><span class="p">[</span><span class="n">v_start_idx</span><span class="p">]</span>
         <span class="n">v_start_idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">v_start_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span>
 
-    <span class="k">return</span> <span class="n">grid</span></div>
+    <span class="k">return</span> <span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">side</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="create_planning_unit_grid"><a class="viewcode-back" href="../planning.html#planning.create_planning_unit_grid">[docs]</a><span class="k">def</span> <span class="nf">create_planning_unit_grid</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Author: Lucas</span>
-<span class="sd">    This function will take user input to create a hexagonal planning</span>
+<span class="sd">    Author: Lucas McPhail</span>
+<span class="sd">    Take user input to create a hexagonal planning</span>
 <span class="sd">    grid that is defined by a central coordinate, cell resolution,</span>
-<span class="sd">    and grid height and width. A unique Planning unit ID is then given</span>
-<span class="sd">    to each hexagon and the final grid can be output to a shapefile.</span>
+<span class="sd">    and grid height and width.</span>
 <span class="sd">    It can also create this grid using other methods, such as taking a</span>
 <span class="sd">    shapefile as input, the CRS and the bounds of that file will be</span>
-<span class="sd">    determined and used to create the planning grid. Additionally a</span>
-<span class="sd">    previously created grid can be input by the user</span>
+<span class="sd">    determined and used to create the planning grid.</span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    Area: float</span>
@@ -199,12 +289,13 @@
 <span class="sd">        y coordinate for center of grid</span>
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    TYPE</span>
-<span class="sd">        Description</span>
+<span class="sd">    planning_unit_grid: gpd.GeoDataFrame</span>
+<span class="sd">        hexagon grid shapefile that matches the dimensions specified by the user</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">planning_unit_grid</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">()</span>
+    <span class="k">global</span> <span class="n">target_crs</span>
 
     <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
@@ -213,8 +304,9 @@
 <span class="w">                    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create Planning Unit Grid</span>
 <span class="sd">        1 Create Grid from Shape File extents</span>
-<span class="sd">        2 Load existing Grid from File</span>
-<span class="sd">        3 Create Grid from User Input</span>
+<span class="sd">        2 Create Grid from Shape File extents and clip to shape</span>
+<span class="sd">        3 Load existing Grid from File</span>
+<span class="sd">        4 Create Grid from User Input</span>
 <span class="sd">        9 Return to Main Menu</span>
 <span class="sd">    &gt;&gt;&gt; &quot;&quot;&quot;</span>
                 <span class="p">)</span>
@@ -224,87 +316,133 @@
             <span class="k">continue</span>
 
         <span class="c1"># 1 Create Grid from Shape File extents</span>
-        <span class="k">if</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="c1">#user can enter the file that will define the bounds and cell area</span>
+        <span class="k">if</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># user can enter the file that will define the bounds and cell area</span>
             <span class="n">file</span> <span class="o">=</span> <span class="n">get_file</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Select a file to load the extents from&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">file</span><span class="p">:</span>
+                <span class="k">continue</span>
             <span class="n">file</span> <span class="o">=</span> <span class="n">load_files</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
-            <span class="n">Area</span> <span class="o">=</span> <span class="n">get_user_float</span><span class="p">(</span><span class="s2">&quot;Grid Cell Area (Meters Squared):&quot;</span><span class="p">)</span>
-            <span class="n">Prj</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">crs</span>
+
+            <span class="n">area</span><span class="p">,</span> <span class="n">suf</span> <span class="o">=</span> <span class="n">get_area_input</span><span class="p">()</span>
+            <span class="nb">print</span> <span class="p">(</span><span class="n">area</span><span class="p">,</span> <span class="n">suf</span><span class="p">)</span>
+            <span class="n">file</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">crs</span><span class="o">=</span><span class="n">target_crs</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">box</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">total_bounds</span>
-            <span class="c1">#edge length of individual hexagon is calculated using the area</span>
-            <span class="n">edge</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Area</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)))</span>
-            <span class="n">hex_centers</span> <span class="o">=</span> <span class="n">create_hexgrid</span><span class="p">(</span><span class="n">box</span><span class="p">,</span> <span class="n">edge</span><span class="p">)</span>
-            <span class="c1">#Empy list is created that will contain the hexagons</span>
-            <span class="n">hexagons</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="c1">#centre points are iterated through the function that creates a</span>
-            <span class="c1">#hexagon around each of them and adds it to the list</span>
-            <span class="k">for</span> <span class="n">center</span> <span class="ow">in</span> <span class="n">hex_centers</span><span class="p">:</span>
-                <span class="n">hexagons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">create_hexagon</span><span class="p">(</span><span class="n">edge</span><span class="p">,</span> <span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
-            <span class="c1">#Geometry list is turned into a geodataframe</span>
-            <span class="n">planning_unit_grid</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><span class="n">hexagons</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">Prj</span><span class="p">)</span>
-            <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">crs</span><span class="o">=</span><span class="n">target_crs</span><span class="p">,</span> <span class="n">inplace</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
-            <span class="c1"># unique PUID is assigned to each hexagon</span>
-            <span class="n">planning_unit_grid</span><span class="p">[</span><span class="n">PUID</span><span class="p">]</span> <span class="o">=</span> <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span>
-            <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Planning Unit Grid&quot;</span>
-            <span class="c1"># planning_unit_grid.to_file(&quot;planning_unit_grid.shp&quot;)</span>
+            <span class="c1"># edge length of individual hexagon is calculated using the area</span>
+            <span class="c1"># edge = math.sqrt(Area**2 / (3 / 2 * math.sqrt(3)))</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">progress</span> <span class="o">=</span> <span class="n">print_progress_start</span><span class="p">(</span><span class="n">ABORT</span> <span class="o">+</span> <span class="s2">&quot;Generating Planning Unit Grid&quot;</span><span class="p">)</span>
+
+                <span class="n">hex_centers</span><span class="p">,</span> <span class="n">edge</span> <span class="o">=</span> <span class="n">create_hexgrid</span><span class="p">(</span><span class="n">box</span><span class="p">,</span> <span class="n">area</span><span class="p">)</span>
+                <span class="c1"># Empty list is created that will contain the hexagons</span>
+                <span class="n">hexagons</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="c1"># centre points are iterated through the function that creates a</span>
+                <span class="c1"># hexagon around each of them and adds it to the list</span>
+                <span class="k">for</span> <span class="n">center</span> <span class="ow">in</span> <span class="n">hex_centers</span><span class="p">:</span>
+                    <span class="n">hexagons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">create_hexagon</span><span class="p">(</span><span class="n">edge</span><span class="p">,</span> <span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="c1"># Geometry list is turned into a geodataframe</span>
+                <span class="n">planning_unit_grid</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><span class="n">hexagons</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">target_crs</span><span class="p">)</span>
+                <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">crs</span><span class="o">=</span><span class="n">target_crs</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="c1"># unique PUID is assigned to each hexagon</span>
+                <span class="n">planning_unit_grid</span><span class="p">[</span><span class="n">PUID</span><span class="p">]</span> <span class="o">=</span> <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span>
+
+                <span class="n">clipped</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="c1"># Clip the hexagons to the shape of the input shapefile</span>
+                <span class="k">if</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">hex_gdf_clipped</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">planning_unit_grid</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+                    <span class="c1"># Filter the original GeoDataFrame to only include the hexagons within the clipped area</span>
+                    <span class="n">hex_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">hex_gdf_clipped</span><span class="p">[</span><span class="n">PUID</span><span class="p">])</span>
+                    <span class="n">planning_unit_grid</span> <span class="o">=</span> <span class="n">planning_unit_grid</span><span class="p">[</span><span class="n">planning_unit_grid</span><span class="p">[</span><span class="n">PUID</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">hex_ids</span><span class="p">)]</span>
+                    <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">planning_unit_grid</span><span class="p">[</span><span class="n">PUID</span><span class="p">]</span> <span class="o">=</span> <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="n">clipped</span> <span class="o">=</span> <span class="s1">&#39;_clipped&#39;</span>
+
+                <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Planning_Unit_Grid_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">area</span><span class="o">/</span><span class="p">(</span><span class="n">SUFFIX_DICT</span><span class="p">[</span><span class="n">suf</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span><span class="s2">&quot;-&quot;</span><span class="p">)</span><span class="si">}{</span><span class="n">suf</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">SQ</span><span class="p">,</span><span class="s2">&quot;2&quot;</span><span class="p">)</span><span class="si">}{</span><span class="n">clipped</span><span class="si">}</span><span class="s1">&#39;</span>
+                <span class="c1"># planning_unit_grid.to_file(&quot;planning_unit_grid.shp&quot;)</span>
+
+            <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+                <span class="n">print_warning_msg</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Grid Generation Aborted</span><span class="se">\n</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">print_warning_msg</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during Grid Generation</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">print_progress_stop</span><span class="p">(</span><span class="n">progress</span><span class="p">)</span>
             <span class="k">break</span>
 
-        <span class="c1"># 2 Load existing Grid from File</span>
-        <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="c1"># 3 Load existing Grid from File</span>
+        <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
             <span class="n">file</span> <span class="o">=</span> <span class="n">get_file</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Select a file to load the grid from&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">file</span><span class="p">:</span>
                 <span class="n">planning_unit_grid</span> <span class="o">=</span> <span class="n">load_files</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
-                <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">crs</span><span class="o">=</span><span class="n">target_crs</span><span class="p">,</span> <span class="n">inplace</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+                <span class="n">target_crs</span> <span class="o">=</span> <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">crs</span>
                 <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
                     <span class="n">print_info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Hex area: </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">area</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">print_warning_msg</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded grid will override target CRS.&quot;</span><span class="p">)</span>
+                    <span class="n">print_info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CRS is now set to </span><span class="si">{</span><span class="n">target_crs</span><span class="o">.</span><span class="n">to_string</span><span class="p">()</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;No file loaded, please try again.&quot;</span><span class="p">)</span>
                 <span class="k">continue</span>
+
             <span class="k">break</span>
 
-        <span class="c1"># 3 Create Grid from User Input</span>
-        <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="c1"># 4 Create Grid from User Input</span>
+        <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
             <span class="c1"># The inputs below will get the information needed to</span>
             <span class="c1"># create a boundary that will be filled with the hexagons as</span>
             <span class="c1"># well as define the hexagon cell size</span>
-            <span class="n">Area</span> <span class="o">=</span> <span class="n">get_user_float</span><span class="p">(</span><span class="s2">&quot;Grid Cell Area (Meters Squared):&quot;</span><span class="p">)</span>
-            <span class="n">grid_size_x</span> <span class="o">=</span> <span class="n">get_user_float</span><span class="p">(</span><span class="s2">&quot;Grid Size X (m): &quot;</span><span class="p">)</span>
-            <span class="n">grid_size_y</span> <span class="o">=</span> <span class="n">get_user_float</span><span class="p">(</span><span class="s2">&quot;Grid Size Y (m): &quot;</span><span class="p">)</span>
+            <span class="n">area</span><span class="p">,</span> <span class="n">suf</span> <span class="o">=</span> <span class="n">get_area_input</span><span class="p">()</span>
+            <span class="n">grid_size_x</span> <span class="o">=</span> <span class="n">get_user_float</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Grid Size X (</span><span class="si">{</span><span class="n">suf</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">SQ</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)</span><span class="si">}</span><span class="s1">): &#39;</span><span class="p">)</span> <span class="o">*</span> <span class="n">SUFFIX_DICT</span><span class="p">[</span><span class="n">suf</span><span class="p">]</span>
+            <span class="n">grid_size_y</span> <span class="o">=</span> <span class="n">get_user_float</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Grid Size Y (</span><span class="si">{</span><span class="n">suf</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">SQ</span><span class="p">,</span><span class="s2">&quot;&quot;</span><span class="p">)</span><span class="si">}</span><span class="s1">): &#39;</span><span class="p">)</span> <span class="o">*</span> <span class="n">SUFFIX_DICT</span><span class="p">[</span><span class="n">suf</span><span class="p">]</span>
             <span class="n">grid_x_coor</span> <span class="o">=</span> <span class="n">get_user_float</span><span class="p">(</span><span class="s2">&quot;Central x coordinate (Same units of CRS): &quot;</span><span class="p">)</span>
             <span class="n">grid_y_coor</span> <span class="o">=</span> <span class="n">get_user_float</span><span class="p">(</span><span class="s2">&quot;Central y coordiante (Same units of CRS): &quot;</span><span class="p">)</span>
-            <span class="c1"># Half of the grid width and height can be added to the central</span>
-            <span class="c1"># coordinate to create a study area that meets the criteria</span>
-            <span class="n">xdiff</span> <span class="o">=</span> <span class="n">grid_size_x</span> <span class="o">/</span> <span class="mi">2</span>
-            <span class="n">ydiff</span> <span class="o">=</span> <span class="n">grid_size_y</span> <span class="o">/</span> <span class="mi">2</span>
-            <span class="c1">#Bounds of the area of interest are created by adding the half the</span>
-            <span class="c1">#grid size to each coordinate</span>
-            <span class="n">xmax</span> <span class="o">=</span> <span class="n">grid_x_coor</span> <span class="o">+</span> <span class="n">xdiff</span>
-            <span class="n">xmin</span> <span class="o">=</span> <span class="n">grid_x_coor</span> <span class="o">-</span> <span class="n">xdiff</span>
-            <span class="n">ymax</span> <span class="o">=</span> <span class="n">grid_y_coor</span> <span class="o">+</span> <span class="n">ydiff</span>
-            <span class="n">ymin</span> <span class="o">=</span> <span class="n">grid_y_coor</span> <span class="o">-</span> <span class="n">ydiff</span>
-            <span class="n">area</span> <span class="o">=</span> <span class="s2">&quot;POLYGON((</span><span class="si">{0}</span><span class="s2"> </span><span class="si">{1}</span><span class="s2">, </span><span class="si">{0}</span><span class="s2"> </span><span class="si">{3}</span><span class="s2">, </span><span class="si">{2}</span><span class="s2"> </span><span class="si">{3}</span><span class="s2">, </span><span class="si">{2}</span><span class="s2"> </span><span class="si">{1}</span><span class="s2">, </span><span class="si">{0}</span><span class="s2"> </span><span class="si">{1}</span><span class="s2">))&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                <span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">)</span>
-            <span class="c1">#poly is converted to a geoseries</span>
-            <span class="n">area_shply</span> <span class="o">=</span> <span class="n">shapely</span><span class="o">.</span><span class="n">wkt</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">area</span><span class="p">)</span>
-            <span class="n">area_geos</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">(</span><span class="n">area_shply</span><span class="p">)</span>
-            <span class="n">box</span> <span class="o">=</span> <span class="n">area_geos</span><span class="o">.</span><span class="n">total_bounds</span>
-            <span class="c1">#edge length of individual hexagon is calculated using the area</span>
-            <span class="n">edge</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">Area</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)))</span>
-            <span class="c1">#grid is created that has the central points of each hexagon</span>
-            <span class="n">hex_centers</span> <span class="o">=</span> <span class="n">create_hexgrid</span><span class="p">(</span><span class="n">box</span><span class="p">,</span> <span class="n">edge</span><span class="p">)</span>
-            <span class="c1">#Empty list that will contain the hexagon geometry</span>
-            <span class="n">hexagons</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="c1">#centre points are iterated through the function that creates a</span>
-            <span class="c1">#hexagon around each of them and adds it to the list</span>
-            <span class="k">for</span> <span class="n">center</span> <span class="ow">in</span> <span class="n">hex_centers</span><span class="p">:</span>
-                <span class="n">hexagons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">create_hexagon</span><span class="p">(</span><span class="n">edge</span><span class="p">,</span> <span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
-            <span class="c1">#Geometry list is turned into a geodataframe</span>
-            <span class="n">planning_unit_grid</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><span class="n">hexagons</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">target_crs</span><span class="p">)</span>
-            <span class="c1"># unique PUID is assigned to each hexagon</span>
-            <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Planning Unit Grid&quot;</span>
-            <span class="n">planning_unit_grid</span><span class="p">[</span><span class="n">PUID</span><span class="p">]</span> <span class="o">=</span> <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span>
-            <span class="c1">#file is saved for user to reuse</span>
-            <span class="c1"># planning_unit_grid.to_file(&quot;planning_unit_grid.shp&quot;)</span>
+
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="n">progress</span> <span class="o">=</span> <span class="n">print_progress_start</span><span class="p">(</span><span class="n">ABORT</span> <span class="o">+</span> <span class="s2">&quot;Generating Planning Unit Grid&quot;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Half of the grid width and height can be added to the central</span>
+                <span class="c1"># coordinate to create a study area that meets the criteria</span>
+                <span class="n">xdiff</span> <span class="o">=</span> <span class="n">grid_size_x</span> <span class="o">/</span> <span class="mi">2</span>
+                <span class="n">ydiff</span> <span class="o">=</span> <span class="n">grid_size_y</span> <span class="o">/</span> <span class="mi">2</span>
+                <span class="c1"># Bounds of the area of interest are created by adding the half the</span>
+                <span class="c1"># grid size to each coordinate</span>
+                <span class="n">xmax</span> <span class="o">=</span> <span class="n">grid_x_coor</span> <span class="o">+</span> <span class="n">xdiff</span>
+                <span class="n">xmin</span> <span class="o">=</span> <span class="n">grid_x_coor</span> <span class="o">-</span> <span class="n">xdiff</span>
+                <span class="n">ymax</span> <span class="o">=</span> <span class="n">grid_y_coor</span> <span class="o">+</span> <span class="n">ydiff</span>
+                <span class="n">ymin</span> <span class="o">=</span> <span class="n">grid_y_coor</span> <span class="o">-</span> <span class="n">ydiff</span>
+                <span class="n">box</span> <span class="o">=</span> <span class="s2">&quot;POLYGON((</span><span class="si">{0}</span><span class="s2"> </span><span class="si">{1}</span><span class="s2">, </span><span class="si">{0}</span><span class="s2"> </span><span class="si">{3}</span><span class="s2">, </span><span class="si">{2}</span><span class="s2"> </span><span class="si">{3}</span><span class="s2">, </span><span class="si">{2}</span><span class="s2"> </span><span class="si">{1}</span><span class="s2">, </span><span class="si">{0}</span><span class="s2"> </span><span class="si">{1}</span><span class="s2">))&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">ymin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">ymax</span><span class="p">)</span>
+                <span class="c1"># poly is converted to a geoseries</span>
+                <span class="n">area_shply</span> <span class="o">=</span> <span class="n">shapely</span><span class="o">.</span><span class="n">wkt</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">box</span><span class="p">)</span>
+                <span class="n">area_geos</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoSeries</span><span class="p">(</span><span class="n">area_shply</span><span class="p">)</span>
+                <span class="n">box</span> <span class="o">=</span> <span class="n">area_geos</span><span class="o">.</span><span class="n">total_bounds</span>
+                <span class="c1"># edge length of individual hexagon is calculated using the area</span>
+                <span class="c1"># edge = math.sqrt(Area**2 / (3 / 2 * math.sqrt(3)))</span>
+                <span class="c1"># grid is created that has the central points of each hexagon</span>
+                <span class="n">hex_centers</span><span class="p">,</span> <span class="n">edge</span> <span class="o">=</span> <span class="n">create_hexgrid</span><span class="p">(</span><span class="n">box</span><span class="p">,</span> <span class="n">area</span><span class="p">)</span>
+                <span class="c1"># Empty list that will contain the hexagon geometry</span>
+                <span class="n">hexagons</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="c1"># centre points are iterated through the function that creates a</span>
+                <span class="c1"># hexagon around each of them and adds it to the list</span>
+                <span class="k">for</span> <span class="n">center</span> <span class="ow">in</span> <span class="n">hex_centers</span><span class="p">:</span>
+                    <span class="n">hexagons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">create_hexagon</span><span class="p">(</span><span class="n">edge</span><span class="p">,</span> <span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+
+                <span class="c1"># Geometry list is turned into a geodataframe</span>
+                <span class="n">planning_unit_grid</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span><span class="n">geometry</span><span class="o">=</span><span class="n">hexagons</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">target_crs</span><span class="p">)</span>
+                <span class="c1"># unique PUID is assigned to each hexagon</span>
+                <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Planning_Unit_Grid_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">area</span><span class="o">/</span><span class="p">(</span><span class="n">SUFFIX_DICT</span><span class="p">[</span><span class="n">suf</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span><span class="s2">&quot;-&quot;</span><span class="p">)</span><span class="si">}{</span><span class="n">suf</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">SQ</span><span class="p">,</span><span class="s2">&quot;2&quot;</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+                <span class="n">planning_unit_grid</span><span class="p">[</span><span class="n">PUID</span><span class="p">]</span> <span class="o">=</span> <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="c1"># file is saved for user to reuse</span>
+                <span class="c1"># planning_unit_grid.to_file(&quot;planning_unit_grid.shp&quot;)</span>
+            <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+                <span class="n">print_warning_msg</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Grid Generation Aborted</span><span class="se">\n</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">print_warning_msg</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during Grid Generation</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="n">print_progress_stop</span><span class="p">(</span><span class="n">progress</span><span class="p">)</span>
             <span class="k">break</span>
 
         <span class="c1"># 9 Return to Main Menu</span>
@@ -428,21 +566,16 @@
 
 
 <span class="c1"># %% Load conservation feature layers from file</span>
-<div class="viewcode-block" id="load_convservation_layers"><a class="viewcode-back" href="../planning.html#planning.load_convservation_layers">[docs]</a><span class="k">def</span> <span class="nf">load_convservation_layers</span><span class="p">(</span><span class="n">conserv_layers</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">]:</span>
+<div class="viewcode-block" id="load_convservation_layers"><a class="viewcode-back" href="../planning.html#planning.load_convservation_layers">[docs]</a><span class="k">def</span> <span class="nf">load_convservation_layers</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Author: Nata</span>
 
 <span class="sd">    Takes user selection to load planning/ conservation layers of interest</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    conserv_layers : list</span>
-<span class="sd">        Takes a list of planning layers to load.</span>
-
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    conserv_layers : list[gpd.GeoDataFrame]</span>
-<span class="sd">        returns a geodataframe of the selected planning layers.</span>
+<span class="sd">        returns a geodataframe of the selected conservation feature layers.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># get list of files to load</span>
@@ -451,7 +584,7 @@
             <span class="n">selection</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
                 <span class="nb">input</span><span class="p">(</span>
 <span class="w">                    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Load Planning Layers</span>
+<span class="sd">    Load Conservation Feature Layers</span>
 <span class="sd">        1 Select Files</span>
 <span class="sd">        2 All from Directory</span>
 <span class="sd">        9 Return to Main Menu</span>
@@ -464,17 +597,17 @@
 
         <span class="c1"># 1 Select Files</span>
         <span class="k">if</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">files</span> <span class="o">=</span> <span class="n">get_files</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Select planning layer files&quot;</span><span class="p">)</span>
+            <span class="n">files</span> <span class="o">=</span> <span class="n">get_files</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Select Conservation Feature files&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">files</span><span class="p">:</span>
                 <span class="n">conserv_layers</span> <span class="o">=</span> <span class="n">load_files</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;No files loaded from directory, please verify files and try again.&quot;</span><span class="p">)</span>
+                <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;No files loaded, please verify files and try again.&quot;</span><span class="p">)</span>
                 <span class="k">continue</span>
             <span class="k">break</span>
 
         <span class="c1"># 2 All from Directory</span>
         <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="n">files</span> <span class="o">=</span> <span class="n">get_files_from_dir</span><span class="p">()</span>
+            <span class="n">files</span> <span class="o">=</span> <span class="n">get_files_from_dir</span><span class="p">([</span><span class="n">ft_shapefile</span><span class="p">,</span> <span class="n">ft_geo_package</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">files</span><span class="p">:</span>
                 <span class="n">conserv_layers</span> <span class="o">=</span> <span class="n">load_files</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -489,9 +622,8 @@
             <span class="n">print_warning_msg</span><span class="p">(</span><span class="n">msg_value_error</span><span class="p">)</span>
             <span class="k">continue</span>
 
-    <span class="n">projected_layers</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">conserv_layers</span><span class="p">:</span>
-        <span class="n">projected_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">target_crs</span><span class="p">))</span>
+    <span class="n">projected_layers</span> <span class="o">=</span> <span class="n">project_gdfs</span><span class="p">(</span><span class="n">conserv_layers</span><span class="p">,</span> <span class="n">target_crs</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">projected_layers</span></div>
 
 
@@ -502,12 +634,12 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Author: Nata</span>
 
-<span class="sd">    Takes planning layers and user input on conservation features of interest to select by attribute and save new file</span>
+<span class="sd">    Takes conservation feature layers and user input on conservation features of interest to select by attribute and save new file</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    conserv_layers : list[gpd.GeoDataFrame]</span>
-<span class="sd">        Takes the pre-loaded planning layers file.</span>
+<span class="sd">        The pre-loaded conservation feature layers files.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -517,7 +649,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">conserv_layers</span><span class="p">):</span>
-        <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;No planning layers loaded.&quot;</span><span class="p">)</span>
+        <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;No conservation feature layers loaded.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">[]</span>
 
     <span class="c1"># This will reset the list of layers to the original loaded layers every time</span>
@@ -525,26 +657,33 @@
     <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">conserv_layers</span><span class="p">:</span>
         <span class="n">filtered_conserv_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">conserv_layers</span><span class="p">)):</span>
-        <span class="n">filtered_conserv_layers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">conserv_layers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">filtered_conserv_layers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">conserv_layers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot;_filtered&quot;</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">conserv_layers</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;filtered_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span>
 
     <span class="n">attribute</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">filter_by_attribute</span><span class="p">(</span><span class="n">conserv_layers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">],</span> <span class="n">attribute</span><span class="p">:</span> <span class="nb">any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">]:</span>
         <span class="nb">filter</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">gdf</span> <span class="ow">in</span> <span class="n">conserv_layers</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">gdf</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">():</span>
-                <span class="nb">filter</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">gdf</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">gdf</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="nb">filter</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">gdf</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+        <span class="nb">filter</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="nb">filter</span><span class="p">))</span>
+        <span class="nb">filter</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
 
         <span class="n">chosenFeatures</span> <span class="o">=</span> <span class="n">get_user_selection</span><span class="p">(</span><span class="nb">filter</span><span class="p">,</span> <span class="n">multi</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Select features to keep&quot;</span><span class="p">)</span>
-
         <span class="n">filtered_gdf_list</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">gdf</span> <span class="ow">in</span> <span class="n">conserv_layers</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">gdf</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-                <span class="n">filtered_gdf</span> <span class="o">=</span> <span class="n">gdf</span><span class="p">[</span><span class="n">gdf</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">chosenFeatures</span><span class="p">)]</span>
-                <span class="n">filtered_gdf</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">gdf</span><span class="o">.</span><span class="n">name</span>
-                <span class="n">filtered_gdf_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filtered_gdf</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">print_warning_msg</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Attribute </span><span class="si">{</span><span class="n">attribute</span><span class="si">}</span><span class="s2"> not found in </span><span class="si">{</span><span class="n">gdf</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">chosenFeatures</span><span class="p">:</span>
+            <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;No features selected.&quot;</span><span class="p">)</span>
+            <span class="n">filtered_gdf_list</span> <span class="o">=</span> <span class="n">conserv_layers</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">gdf</span> <span class="ow">in</span> <span class="n">conserv_layers</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">gdf</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                    <span class="n">filtered_gdf</span> <span class="o">=</span> <span class="n">gdf</span><span class="p">[</span><span class="n">gdf</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">chosenFeatures</span><span class="p">)]</span>
+                    <span class="n">filtered_gdf</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">gdf</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gdf</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+                    <span class="n">filtered_gdf_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filtered_gdf</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">print_warning_msg</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Attribute </span><span class="si">{</span><span class="n">attribute</span><span class="si">}</span><span class="s2"> not found in gdf </span><span class="si">{</span><span class="n">gdf</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">filtered_gdf_list</span>
 
     <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
@@ -552,7 +691,7 @@
             <span class="n">selection</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
                 <span class="nb">input</span><span class="p">(</span>
 <span class="w">                    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Query Planning Layers</span>
+<span class="sd">    Query Conservation Feature Layers</span>
 <span class="sd">        1 ID</span>
 <span class="sd">        2 CLASS_TYPE</span>
 <span class="sd">        3 GROUP_</span>
@@ -588,6 +727,8 @@
             <span class="k">for</span> <span class="n">gdf</span> <span class="ow">in</span> <span class="n">conserv_layers</span><span class="p">:</span>
                 <span class="n">column_names</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">gdf</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span>
             <span class="n">column_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">column_names</span><span class="p">))</span>
+            <span class="n">column_names</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">GEOMETRY</span><span class="p">)</span>
+            <span class="n">column_names</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
             <span class="n">sel</span> <span class="o">=</span> <span class="n">get_user_selection</span><span class="p">(</span><span class="n">column_names</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Select attribute to filter by&quot;</span><span class="p">)</span>
             <span class="n">attribute</span> <span class="o">=</span> <span class="n">sel</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">sel</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
             <span class="k">break</span>
@@ -599,7 +740,7 @@
             <span class="k">continue</span>
 
     <span class="k">if</span> <span class="n">attribute</span><span class="p">:</span>
-        <span class="n">filtered_conserv_layers</span> <span class="o">=</span> <span class="n">filter_by_attribute</span><span class="p">(</span><span class="n">conserv_layers</span><span class="p">,</span> <span class="n">attribute</span><span class="p">)</span>
+        <span class="n">filtered_conserv_layers</span> <span class="o">=</span> <span class="n">filter_by_attribute</span><span class="p">(</span><span class="n">filtered_conserv_layers</span><span class="p">,</span> <span class="n">attribute</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">filtered_conserv_layers</span></div>
 
@@ -621,13 +762,14 @@
     <span class="n">intersections</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">cons_layers</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">layer</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
-            <span class="n">clipped_grid</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">planning_grid</span><span class="p">,</span> <span class="n">layer</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">convex_hull</span><span class="p">)</span>  <span class="c1"># this may not improve performance</span>
+            <span class="n">clipped_grid</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">planning_grid</span><span class="p">,</span> <span class="n">layer</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">convex_hull</span><span class="p">)</span>
             <span class="n">intersection</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">overlay</span><span class="p">(</span><span class="n">clipped_grid</span><span class="p">,</span> <span class="n">layer</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;intersection&quot;</span><span class="p">)</span>
             <span class="n">intersection</span><span class="p">[</span><span class="n">AMOUNT</span><span class="p">]</span> <span class="o">=</span> <span class="n">intersection</span><span class="o">.</span><span class="n">area</span>
             <span class="n">intersection</span><span class="p">[</span><span class="n">AMOUNT</span><span class="p">]</span> <span class="o">=</span> <span class="n">intersection</span><span class="p">[</span><span class="n">AMOUNT</span><span class="p">]</span><span class="o">.</span><span class="n">round</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
             <span class="n">intersections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">intersection</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;Skipping empty conservation layer.&quot;</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">intersections</span></div>
 
 
@@ -674,9 +816,22 @@
         <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">pool</span><span class="o">.</span><span class="n">imap_unordered</span><span class="p">(</span><span class="n">calc_overlap_partial</span><span class="p">,</span> <span class="n">planning_grid_divisions</span><span class="p">):</span>
             <span class="n">intersections</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 
+    <span class="c1"># sort the results by PUID, ID, and AMOUNT</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">intersections</span><span class="p">)):</span>
+        <span class="n">intersections</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">intersections</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">([</span><span class="n">PUID</span><span class="p">,</span> <span class="n">ID</span><span class="p">,</span> <span class="n">AMOUNT</span><span class="p">])</span>
+
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="n">print_progress_stop</span><span class="p">(</span><span class="n">progress</span><span class="p">)</span>
         <span class="n">print_info_complete</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Intersection calculations completed in: </span><span class="si">{</span><span class="p">(</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span>
+
+    <span class="c1"># check if any results were found</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">intersections</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">layer</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">break</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">:</span>
+        <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;No intersecting features found.&quot;</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">intersections</span></div>
 
@@ -792,16 +947,22 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">layers</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
-                    <span class="n">progress</span> <span class="o">=</span> <span class="n">print_progress_start</span><span class="p">(</span><span class="s2">&quot;Plotting&quot;</span><span class="p">,</span> <span class="n">dots</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+                    <span class="n">progress</span> <span class="o">=</span> <span class="n">print_progress_start</span><span class="p">(</span><span class="n">ABORT</span> <span class="o">+</span> <span class="s2">&quot;Plotting&quot;</span><span class="p">,</span> <span class="n">dots</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
                         <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;Nothing to plot.&quot;</span><span class="p">)</span>
                         <span class="k">continue</span>
-                    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
-                    <span class="n">layer</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">):</span>
+                    <span class="c1"># get the column name to colour plot if it exists</span>
+                    <span class="k">if</span> <span class="n">MAP_COLUMN</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+                        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+                        <span class="n">layer</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">column</span><span class="o">=</span><span class="n">MAP_COLUMN</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">categorical</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">ax</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">):</span>
                         <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
                     <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+                <span class="n">print_warning_msg</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Plotting Aborted</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">print_warning_msg</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error while plotting</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
@@ -857,6 +1018,20 @@
     <span class="k">return</span></div>
 
 
+<div class="viewcode-block" id="project_gdfs"><a class="viewcode-back" href="../planning.html#planning.project_gdfs">[docs]</a><span class="k">def</span> <span class="nf">project_gdfs</span><span class="p">(</span><span class="n">gdfs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">],</span> <span class="n">crs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">]:</span>
+    <span class="n">projected_gdfs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">gdf</span> <span class="ow">in</span> <span class="n">gdfs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">gdf</span><span class="o">.</span><span class="n">crs</span> <span class="o">!=</span> <span class="n">crs</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">gdf</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gdf</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">print_info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Projecting </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">crs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">projected_gdfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gdf</span><span class="o">.</span><span class="n">to_crs</span><span class="p">(</span><span class="n">crs</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">projected_gdfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gdf</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">gdf</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">):</span>
+            <span class="n">projected_gdfs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">gdf</span><span class="o">.</span><span class="n">name</span>
+    <span class="k">return</span> <span class="n">projected_gdfs</span></div>
+
+
 <span class="c1"># %% Main</span>
 <div class="viewcode-block" id="main"><a class="viewcode-back" href="../planning.html#planning.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Main function. Calls main_menu() which will runs until user enters 9 to exit</span>
@@ -873,15 +1048,15 @@
         <span class="c1"># intialize variables</span>
         <span class="n">work_saved</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># flag to save the results</span>
         <span class="n">planning_unit_grid</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">()</span>  <span class="c1"># planning unit grid</span>
-        <span class="n">filtered_planning_unit_grid</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">()</span>  <span class="c1"># this is the planning unit grid after filtering, now obsolete</span>
-        <span class="n">conserv_layers</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># list of planning layers gdfs, name will change to conservation_features</span>
+        <span class="c1"># filtered_planning_unit_grid = gpd.GeoDataFrame()  # this is the planning unit grid after filtering, now obsolete</span>
+        <span class="n">conserv_layers</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># list of conservation feature layers gdfs, name will change to conservation_features</span>
         <span class="n">filtered_conserv_layers</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># this is list of conservation_features gdfs after filtering</span>
         <span class="n">intersections_gdf</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># list of gdfs of planning unit / conservation feature intersections</span>
         <span class="n">intersections_df</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
         <span class="p">)</span>  <span class="c1"># dataframe of planning unit / conservation feature intersections, used to easy csv export</span>
 
-        <span class="c1"># target_crs = get_crs()</span>
+        <span class="n">get_crs</span><span class="p">()</span>
 
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
@@ -890,12 +1065,11 @@
 <span class="w">                        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Main Menu:</span>
 <span class="sd">        1 Create Planning Unit Grid</span>
-<span class="sd">        2 Select Planning Units</span>
-<span class="sd">        3 Load Conservation Features Files</span>
-<span class="sd">        4 Select Conservation Features</span>
-<span class="sd">        5 View Layers</span>
-<span class="sd">        6 Calculate Overlap</span>
-<span class="sd">        7 Save Results</span>
+<span class="sd">        2 Load Conservation Features Files</span>
+<span class="sd">        3 Filter Conservation Features</span>
+<span class="sd">        4 View Layers</span>
+<span class="sd">        5 Calculate Overlap</span>
+<span class="sd">        6 Save Results</span>
 <span class="sd">        9 Quit</span>
 <span class="sd">    &gt;&gt;&gt; &quot;&quot;&quot;</span>
                     <span class="p">)</span>
@@ -907,61 +1081,91 @@
             <span class="c1"># 1 Create Planning Unit GridFeatures</span>
             <span class="k">if</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">planning_unit_grid</span> <span class="o">=</span> <span class="n">create_planning_unit_grid</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+                    <span class="n">conserv_layers</span> <span class="o">=</span> <span class="n">project_gdfs</span><span class="p">(</span><span class="n">conserv_layers</span><span class="p">,</span> <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">crs</span><span class="p">)</span>
+                    <span class="n">filtered_conserv_layers</span> <span class="o">=</span> <span class="n">project_gdfs</span><span class="p">(</span><span class="n">filtered_conserv_layers</span><span class="p">,</span> <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">crs</span><span class="p">)</span>
                 <span class="k">continue</span>
 
-            <span class="c1"># 2 Select Planning Units</span>
-            <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="c1"># 2 Select Planning Units</span>
+                <span class="c1"># elif selection == 2:</span>
                 <span class="c1"># NOTE: this is now obsolete, but only commenting out for now</span>
                 <span class="c1"># filtered_planning_unit_grid = select_planning_units(planning_unit_grid)</span>
                 <span class="k">continue</span>
 
-            <span class="c1"># 3 Load Conservation Features Files</span>
-            <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-                <span class="n">conserv_layers</span> <span class="o">=</span> <span class="n">load_convservation_layers</span><span class="p">(</span><span class="n">conserv_layers</span><span class="p">)</span>
+            <span class="c1"># 2 Load Conservation Features Files</span>
+            <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">conserv_layers</span> <span class="o">=</span> <span class="n">load_convservation_layers</span><span class="p">()</span>
                 <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">conserv_layers</span><span class="p">:</span>
                     <span class="n">filtered_conserv_layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">conserv_layers</span><span class="p">)):</span>
-                    <span class="n">filtered_conserv_layers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">conserv_layers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+                    <span class="n">filtered_conserv_layers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">conserv_layers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">conserv_layers</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+                    <span class="p">)</span>
                 <span class="k">continue</span>
 
-            <span class="c1"># 4 Select conservation features</span>
-            <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="c1"># 3 Select conservation features</span>
+            <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
                 <span class="n">filtered_conserv_layers</span> <span class="o">=</span> <span class="n">query_conservation_layers</span><span class="p">(</span><span class="n">conserv_layers</span><span class="p">)</span>
                 <span class="k">continue</span>
 
-            <span class="c1"># 5 View Layers</span>
-            <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="c1"># 4 View Layers</span>
+            <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
                 <span class="n">plot_layers</span><span class="p">(</span><span class="n">planning_unit_grid</span><span class="p">,</span> <span class="n">conserv_layers</span><span class="p">,</span> <span class="n">filtered_conserv_layers</span><span class="p">)</span>
                 <span class="k">continue</span>
 
-            <span class="c1"># 6 Calculate Overlap</span>
-            <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="c1"># 5 Calculate Overlap</span>
+            <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
                 <span class="n">intersections_gdf</span> <span class="o">=</span> <span class="n">calculate_overlap</span><span class="p">(</span><span class="n">planning_unit_grid</span><span class="p">,</span> <span class="n">filtered_conserv_layers</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">intersections_gdf</span><span class="p">):</span>
                     <span class="n">intersections_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">intersections_gdf</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span>
                 <span class="k">continue</span>
 
-            <span class="c1"># 7 Save Results</span>
-            <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">7</span><span class="p">:</span>
+            <span class="c1"># 6 Save Results</span>
+            <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
-                    <span class="n">save_gdf</span><span class="p">(</span><span class="n">planning_unit_grid</span><span class="p">)</span>
+                    <span class="n">initial_file</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">planning_unit_grid</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">planning_unit_grid</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;planning_unit_grid&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">save_gdf</span><span class="p">(</span>
+                        <span class="n">planning_unit_grid</span><span class="p">,</span>
+                        <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Save planning unit grid to file&quot;</span><span class="p">,</span>
+                        <span class="n">initialfile</span><span class="o">=</span><span class="n">initial_file</span><span class="p">,</span>
+                        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+                    <span class="p">):</span>
+                        <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;Planning unit grid not saved.&quot;</span><span class="p">)</span>
+                    <span class="c1"># TODO: add check to see if planning unit grid was already from file</span>
+                    <span class="c1"># if from file, then don&#39;t save planning unit grid unless it</span>
+                    <span class="c1"># was projected to a different crs</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;No planning unit grid to save.&quot;</span><span class="p">)</span>
 
-                <span class="n">save_filtered_conserv_layers</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="k">for</span> <span class="n">gdf</span> <span class="ow">in</span> <span class="n">filtered_conserv_layers</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">gdf</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
-                        <span class="n">save_gdf</span><span class="p">(</span><span class="n">gdf</span><span class="p">)</span>
-                        <span class="n">save_filtered_conserv_layers</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;Skipping saving empty conservation feature layer.&quot;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">save_filtered_conserv_layers</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">filtered_conserv_layers</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">filtered_conserv_layers</span><span class="p">)):</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">filtered_conserv_layers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+                            <span class="n">initial_file</span> <span class="o">=</span> <span class="p">(</span>
+                                <span class="n">filtered_conserv_layers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+                                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">filtered_conserv_layers</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+                                <span class="k">else</span> <span class="s2">&quot;conservation_layer&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                            <span class="p">)</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">save_gdf</span><span class="p">(</span>
+                                <span class="n">filtered_conserv_layers</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Save filtered conservation feature layer to file&quot;</span><span class="p">,</span>
+                                <span class="n">initialfile</span><span class="o">=</span><span class="n">initial_file</span><span class="p">,</span>
+                                <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+                            <span class="p">):</span>
+                                <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;Conservation feature layer not saved.&quot;</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;Skipping saving empty conservation feature layer.&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
                     <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;No conservation feature layers to save.&quot;</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">intersections_df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
                     <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;No intersection results to save.&quot;</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">file_name</span> <span class="o">=</span> <span class="n">get_save_file_name</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Save results to csv&quot;</span><span class="p">,</span> <span class="n">f_types</span><span class="o">=</span><span class="n">ft_csv</span><span class="p">)</span>
+                    <span class="n">print_info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saving results&quot;</span><span class="p">)</span>
+                    <span class="n">file_name</span> <span class="o">=</span> <span class="n">get_save_file_name</span><span class="p">(</span>
+                        <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Save results to csv&quot;</span><span class="p">,</span> <span class="n">f_types</span><span class="o">=</span><span class="n">ft_csv</span><span class="p">,</span> <span class="n">initialfile</span><span class="o">=</span><span class="n">DEFAULT_RESULTS_FILE_NAME</span>
+                    <span class="p">)</span>
                     <span class="n">intersections_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span>
                         <span class="n">file_name</span><span class="p">,</span>
                         <span class="n">header</span><span class="o">=</span><span class="p">[</span><span class="n">SPECIES</span><span class="p">,</span> <span class="n">PU</span><span class="p">,</span> <span class="n">AMOUNT</span><span class="p">],</span>
@@ -973,7 +1177,7 @@
 
             <span class="c1"># 9 Quit</span>
             <span class="k">elif</span> <span class="n">selection</span> <span class="o">==</span> <span class="mi">9</span><span class="p">:</span>
-                <span class="n">quit</span> <span class="o">=</span> <span class="s1">&#39;y&#39;</span>
+                <span class="n">quit</span> <span class="o">=</span> <span class="s2">&quot;y&quot;</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">work_saved</span><span class="p">:</span>
                     <span class="n">print_warning_msg</span><span class="p">(</span><span class="s2">&quot;No overlap results were saved.&quot;</span><span class="p">)</span>
                     <span class="n">quit</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Are you sure you want to quit? (y/n): &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span>
@@ -993,10 +1197,7 @@
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-    <span class="k">if</span> <span class="n">run_tests</span><span class="p">:</span>
-        <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">TESTING COMPLETE&quot;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">main</span><span class="p">()</span>
+    <span class="n">main</span><span class="p">()</span>
 
 <span class="c1"># %%</span>
 </pre></div>
@@ -1019,10 +1220,9 @@
 <h3>Navigation</h3>
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../index.html">Welcome to Conservartion Planning Project’s documentation!</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../index.html#indices-and-tables">Indices and tables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intro.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../modules.html">planningproj</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../planning.html">planning module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../util.html">util module</a></li>
 </ul>
 
 <div class="relations">

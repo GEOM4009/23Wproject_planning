@@ -15,7 +15,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="util module" href="util.html" />
-    <link rel="prev" title="planningproj" href="modules.html" />
+    <link rel="prev" title="Introduction" href="intro.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -46,8 +46,6 @@ different steps of the data and planning process.</p>
 <p>conda install -c conda-forge tk  –&gt; provides the tkinter GUI</p>
 </dd>
 </dl>
-<p>TODO: Confirm with client if there will be any use case for an argument parser
-TODO: Add additional error handling for the different functions</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="planning.calculate">
 <span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">calculate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">planning_grid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">GeoDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cons_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/planning.html#calculate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.calculate" title="Permalink to this definition">¶</a></dt>
@@ -108,7 +106,7 @@ Source:https://gis.stackexchange.com/questions/341218/creating-a-hexagonal-grid-
 
 <dl class="py function">
 <dt class="sig sig-object py" id="planning.create_hexgrid">
-<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">create_hexgrid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bbx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">side</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/planning.html#create_hexgrid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.create_hexgrid" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">create_hexgrid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bbx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/planning.html#create_hexgrid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.create_hexgrid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Author:Kadir Şahbaz
 returns an array of Points describing hexagons centers that are inside the given bounding_box
 :param bbx: The containing bounding box. The bbox coordinate should be in Webmercator.
@@ -120,15 +118,13 @@ Source:https://gis.stackexchange.com/questions/341218/creating-a-hexagonal-grid-
 <dl class="py function">
 <dt class="sig sig-object py" id="planning.create_planning_unit_grid">
 <span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">create_planning_unit_grid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">GeoDataFrame</span></span></span><a class="reference internal" href="_modules/planning.html#create_planning_unit_grid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.create_planning_unit_grid" title="Permalink to this definition">¶</a></dt>
-<dd><p>Author: Lucas
-This function will take user input to create a hexagonal planning
+<dd><p>Author: Lucas McPhail
+Take user input to create a hexagonal planning
 grid that is defined by a central coordinate, cell resolution,
-and grid height and width. A unique Planning unit ID is then given
-to each hexagon and the final grid can be output to a shapefile.
+and grid height and width.
 It can also create this grid using other methods, such as taking a
 shapefile as input, the CRS and the bounds of that file will be
-determined and used to create the planning grid. Additionally a
-previously created grid can be input by the user
+determined and used to create the planning grid.
 :param Area: Size of grid cell that the user will use, the units will be</p>
 <blockquote>
 <div><p>the same units as the CRS that the user specifies</p>
@@ -143,17 +139,35 @@ previously created grid can be input by the user
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Description</p>
+<dd class="field-even"><p><strong>planning_unit_grid</strong> – hexagon grid shapefile that matches the dimensions specified by the user</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>TYPE</p>
+<dd class="field-odd"><p>gpd.GeoDataFrame</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="planning.crs">
-<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">crs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/planning.html#crs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.crs" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="planning.get_area_input">
+<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">get_area_input</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/planning.html#get_area_input"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.get_area_input" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse user input for grid cell area.
+Prompt user until valid input is received or quit is selected.
+Usage: &lt;number&gt;&lt;suffix&gt; (ex. 25km)
+Suffixes: m , hm, ha, km (case insensitive)
+Author: Mitch Albert</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Area in square meters</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="planning.get_crs">
+<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">get_crs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/planning.html#get_crs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.get_crs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Author: Ethan
 The user enters the crs and if it is alber equal area then they have to enter the required coordinates which it will be processed into the crs formula to create the crs which will be
 saved as a variable called target_crs. This will make it so the rest of the functions can call this function to keep a consistent CRS.</p>
@@ -166,18 +180,15 @@ saved as a variable called target_crs. This will make it so the rest of the func
 
 <dl class="py function">
 <dt class="sig sig-object py" id="planning.load_convservation_layers">
-<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">load_convservation_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conserv_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/planning.html#load_convservation_layers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.load_convservation_layers" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">load_convservation_layers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/planning.html#load_convservation_layers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.load_convservation_layers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Author: Nata</p>
 <p>Takes user selection to load planning/ conservation layers of interest</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>conserv_layers</strong> (<em>list</em>) – Takes a list of planning layers to load.</p>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>conserv_layers</strong> – returns a geodataframe of the selected conservation feature layers.</p>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>conserv_layers</strong> – returns a geodataframe of the selected planning layers.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>list[gpd.GeoDataFrame]</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[gpd.GeoDataFrame]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -206,13 +217,18 @@ Author: Mitch Albert</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="planning.project_gdfs">
+<span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">project_gdfs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gdfs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/planning.html#project_gdfs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.project_gdfs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="planning.query_conservation_layers">
 <span class="sig-prename descclassname"><span class="pre">planning.</span></span><span class="sig-name descname"><span class="pre">query_conservation_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conserv_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">geopandas.geodataframe.GeoDataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/planning.html#query_conservation_layers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#planning.query_conservation_layers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Author: Nata</p>
-<p>Takes planning layers and user input on conservation features of interest to select by attribute and save new file</p>
+<p>Takes conservation feature layers and user input on conservation features of interest to select by attribute and save new file</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>conserv_layers</strong> (<em>list</em><em>[</em><em>gpd.GeoDataFrame</em><em>]</em>) – Takes the pre-loaded planning layers file.</p>
+<dd class="field-odd"><p><strong>conserv_layers</strong> (<em>list</em><em>[</em><em>gpd.GeoDataFrame</em><em>]</em>) – The pre-loaded conservation feature layers files.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Returns a geodataframe of only the selected conservation features.</p>
@@ -267,28 +283,32 @@ Utility function to validate a Coordinate Reference System (CRS) and either corr
 <h3>Navigation</h3>
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="index.html">Welcome to Conservartion Planning Project’s documentation!</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="intro.html">Introduction</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="modules.html">planningproj</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="index.html#indices-and-tables">Indices and tables</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="modules.html">planningproj</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">planning module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="util.html">util module</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">planning module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#planning.calculate"><code class="docutils literal notranslate"><span class="pre">calculate()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.calculate_overlap"><code class="docutils literal notranslate"><span class="pre">calculate_overlap()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.create_hexagon"><code class="docutils literal notranslate"><span class="pre">create_hexagon()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.create_hexgrid"><code class="docutils literal notranslate"><span class="pre">create_hexgrid()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.create_planning_unit_grid"><code class="docutils literal notranslate"><span class="pre">create_planning_unit_grid()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.get_area_input"><code class="docutils literal notranslate"><span class="pre">get_area_input()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.get_crs"><code class="docutils literal notranslate"><span class="pre">get_crs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.load_convservation_layers"><code class="docutils literal notranslate"><span class="pre">load_convservation_layers()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.plot_layers"><code class="docutils literal notranslate"><span class="pre">plot_layers()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.project_gdfs"><code class="docutils literal notranslate"><span class="pre">project_gdfs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.query_conservation_layers"><code class="docutils literal notranslate"><span class="pre">query_conservation_layers()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#planning.validate_crs"><code class="docutils literal notranslate"><span class="pre">validate_crs()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="util.html">util module</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-  <li><a href="modules.html">planningproj</a><ul>
-      <li>Previous: <a href="modules.html" title="previous chapter">planningproj</a></li>
+      <li>Previous: <a href="intro.html" title="previous chapter">Introduction</a></li>
       <li>Next: <a href="util.html" title="next chapter">util module</a></li>
-  </ul></li>
   </ul></li>
 </ul>
 </div>
