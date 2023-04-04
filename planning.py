@@ -315,6 +315,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
                 # unique PUID is assigned to each hexagon
                 planning_unit_grid[PUID] = planning_unit_grid.index + 1
 
+                clipped = ''
                 # Clip the hexagons to the shape of the input shapefile
                 if selection == 2:
                     hex_gdf_clipped = gpd.clip(planning_unit_grid, file)
@@ -323,8 +324,9 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
                     planning_unit_grid = planning_unit_grid[planning_unit_grid[PUID].isin(hex_ids)]
                     planning_unit_grid.reset_index(drop=True, inplace=True)
                     planning_unit_grid[PUID] = planning_unit_grid.index + 1
+                    clipped = '_clipped'
 
-                planning_unit_grid.name = f'Planning_Unit_Grid_{str(area/(SUFFIX_DICT[suf]**2).replace(".","-"))}{suf.replace(SQ,"2")}'
+                planning_unit_grid.name = f'Planning_Unit_Grid_{str(area/(SUFFIX_DICT[suf]**2)).replace(".","-")}{suf.replace(SQ,"2")}+{clipped}'
                 # planning_unit_grid.to_file("planning_unit_grid.shp")
 
             except KeyboardInterrupt:
@@ -397,7 +399,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
                 # Geometry list is turned into a geodataframe
                 planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=target_crs)
                 # unique PUID is assigned to each hexagon
-                planning_unit_grid.name = f'Planning_Unit_Grid_{str(area/(SUFFIX_DICT[suf]**2).replace(".","-"))}{suf.replace(SQ,"2")}'
+                planning_unit_grid.name = f'Planning_Unit_Grid_{str(area/(SUFFIX_DICT[suf]**2)).replace(".","-")}{suf.replace(SQ,"2")}'
                 planning_unit_grid[PUID] = planning_unit_grid.index + 1
                 # file is saved for user to reuse
                 # planning_unit_grid.to_file("planning_unit_grid.shp")
