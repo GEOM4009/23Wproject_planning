@@ -8,8 +8,6 @@ This file contains general definitions for the planning.py script
 
 """
 
-import pyproj
-
 # filedialog file types
 ft_shapefile = ("Shapefile", "*.shp")
 ft_geo_package = ("GeoPackage ", "*.gpkg")
