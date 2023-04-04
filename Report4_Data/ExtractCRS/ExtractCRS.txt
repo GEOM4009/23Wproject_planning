@@ -1,0 +1,16 @@
+│   test1.txt
+│
+├───BorderofNunavutRegions_geographic
+│       BorderofNunavutRegionsgeographic.shp
+│
+└───BorderofNunavutRegions_projected 
+        BorderofNunavutRegions.shp
+
+Test extraction of a CRS from a file using the above files.
+Start program
+>>> 2 (enter) 
+>>> Select File
+
+BorderofNunavutRegionsgeographic.shp --> Fail, CRS is not projected
+
+BorderofNunavutRegions.shp --> pass
