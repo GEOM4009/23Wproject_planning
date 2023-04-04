@@ -241,7 +241,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
     and grid height and width.
     It can also create this grid using other methods, such as taking a
     shapefile as input, the CRS and the bounds of that file will be
-    determined and used to create the planning grid. 
+    determined and used to create the planning grid.
     Parameters
     ----------
     Area: float
@@ -326,7 +326,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
                     planning_unit_grid[PUID] = planning_unit_grid.index + 1
                     clipped = '_clipped'
 
-                planning_unit_grid.name = f'Planning_Unit_Grid_{str(area/(SUFFIX_DICT[suf]**2)).replace(".","-")}{suf.replace(SQ,"2")}+{clipped}'
+                planning_unit_grid.name = f'Planning_Unit_Grid_{str(area/(SUFFIX_DICT[suf]**2)).replace(".","-")}{suf.replace(SQ,"2")}{clipped}'
                 # planning_unit_grid.to_file("planning_unit_grid.shp")
 
             except KeyboardInterrupt:
@@ -575,7 +575,7 @@ def load_convservation_layers() -> list[gpd.GeoDataFrame]:
 
         # 2 All from Directory
         elif selection == 2:
-            files = get_files_from_dir()
+            files = get_files_from_dir([ft_shapefile, ft_geo_package])
             if files:
                 conserv_layers = load_files(files, verbose)
             else:
@@ -590,7 +590,7 @@ def load_convservation_layers() -> list[gpd.GeoDataFrame]:
             print_warning_msg(msg_value_error)
             continue
 
-    projected_layers = project_gdfs(conserv_layers)
+    projected_layers = project_gdfs(conserv_layers, target_crs)
 
     return projected_layers
 
@@ -986,7 +986,7 @@ def plot_layers(
     return
 
 
-def project_gdfs(gdfs: list[gpd.GeoDataFrame], crs=target_crs) -> list[gpd.GeoDataFrame]:
+def project_gdfs(gdfs: list[gpd.GeoDataFrame], crs) -> list[gpd.GeoDataFrame]:
     projected_gdfs = []
     for gdf in gdfs:
         if gdf.crs != crs:
@@ -1049,8 +1049,9 @@ def main():
             # 1 Create Planning Unit GridFeatures
             if selection == 1:
                 planning_unit_grid = create_planning_unit_grid()
-                conserv_layers = project_gdfs(conserv_layers)
-                filtered_conserv_layers = project_gdfs(filtered_conserv_layers)
+                if not planning_unit_grid.empty:
+                    conserv_layers = project_gdfs(conserv_layers, planning_unit_grid.crs)
+                    filtered_conserv_layers = project_gdfs(filtered_conserv_layers, planning_unit_grid.crs)
                 continue
 
                 # 2 Select Planning Units
