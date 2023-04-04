@@ -19,7 +19,7 @@ Revision History:
 """
 
 # import modules
-from os import getcwd, chdir, path, environ
+from os import getcwd, chdir, path, environ, sep
 
 environ["USE_PYGEOS"] = "0"
 import tkinter.filedialog
@@ -414,7 +414,7 @@ def get_files_from_dir(
     )
     root.destroy()
     files = []
-    if dir != None:
+    if dir:
         chdir(dir)
         if not isinstance(f_types, list):
             f_types = [f_types]
@@ -426,6 +426,7 @@ def get_files_from_dir(
                 f_list = glob(t)
                 for file in f_list:
                     files.append(path.join(getcwd(), file))
+                    files[-1] = files[-1].replace(sep, "/")
     chdir(wd)
     files = files if len(files) else None
     if not files:
