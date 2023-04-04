@@ -8,6 +8,8 @@ This file contains general definitions for the planning.py script
 
 """
 
+import pyproj
+
 # filedialog file types
 ft_shapefile = ("Shapefile", "*.shp")
 ft_geo_package = ("GeoPackage ", "*.gpkg")
@@ -70,10 +72,10 @@ METERS = "meters"
 M_FACTOR = 1
 H = "h"
 HECTO = "hecto"
-HM_FACTOR = 10000
+HM_FACTOR = 100
 K = "k"
 KILO = "kilo"
-KM_FACTOR = 1000000
+KM_FACTOR = 1000
 
 # Suffixes
 M_SQ = M + SQ
@@ -84,9 +86,9 @@ HECTOMETERS = HECTO + METERS
 HECTOMETERS_SQ = HECTOMETERS + SQ
 HM_SQ = H + M + SQ
 
-HECTARES = "hectares"
-HA = "ha"
-HA_FACTOR = HM_FACTOR
+# HECTARES = "hectares"
+# HA = "ha"
+# HA_FACTOR = HM_FACTOR
 
 KM = K + M
 KILOMETERS = KILO + METERS
@@ -97,7 +99,8 @@ DEFAULT_UNIT_FACTOR = M_FACTOR
 DEFAULT_UNITS_SQ = METERS_SQ
 DEF_UNITS_SQ = M_SQ
 
-SUFFIX_DICT = {M_SQ: M_FACTOR, HM_SQ: HM_FACTOR, HA: HA_FACTOR, KM_SQ: KM_FACTOR}
+SUFFIX_DICT = {M_SQ: M_FACTOR, HM_SQ: HM_FACTOR, KM_SQ: KM_FACTOR}
 
-# TARGET_CRS = 'PROJCS["Canada_Albers_Equal_Area_Conic",GEOGCS["NAD83",DATUM["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6269"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4269"]],PROJECTION["Albers_Conic_Equal_Area"],PARAMETER["latitude_of_center",40],PARAMETER["longitude_of_center",-96],PARAMETER["standard_parallel_1",50],PARAMETER["standard_parallel_2",70],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["ESRI","102001"]]'
-TARGET_CRS = "ESRI:102001"  # Canada_Albers_Equal_Area_Conic
+ESRI102001 = "ESRI:102001"
+# ESRI102001 = 'PROJCS["Canada_Albers_Equal_Area_Conic",GEOGCS["NAD83",DATUM["North_American_Datum_1983",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],AUTHORITY["EPSG","6269"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4269"]],PROJECTION["Albers_Conic_Equal_Area"],PARAMETER["latitude_of_center",40],PARAMETER["longitude_of_center",-96],PARAMETER["standard_parallel_1",50],PARAMETER["standard_parallel_2",70],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["Easting",EAST],AXIS["Northing",NORTH],AUTHORITY["ESRI","102001"]]'
+TARGET_CRS = ESRI102001  # Canada_Albers_Equal_Area_Conic

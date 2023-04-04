@@ -130,7 +130,7 @@ def get_area_input() -> float:
     """
 
     while True:
-        input_str = input(f"Grid Cell Area in {M_SQ}, {HA}, or {KM_SQ}, enter in format <number><suffix> (ex. 25km): ")
+        input_str = input(f"Grid Cell Area in {M_SQ}, {HM_SQ}, or {KM_SQ}, enter in format <number><suffix> (ex. 25km): ")
 
         # Remove spaces
         input_str = input_str.replace(" ", "")
@@ -144,7 +144,7 @@ def get_area_input() -> float:
             if char.isdigit() or char == ".":
                 num_str += char
             else:
-                suffix_str = input_str[i:]
+                suffix_str = (input_str[i:])[:2]
                 break
 
         # try to convert the digit porttion to a float
@@ -165,7 +165,7 @@ def get_area_input() -> float:
 
     print_info(f"Area: {area}, Units: {suffix_str}")
 
-    return area * SUFFIX_DICT[suffix_str]
+    return (area * SUFFIX_DICT[suffix_str]**2, suffix_str)
 
 
 # %% create a planning unit grid
@@ -293,8 +293,8 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
                 continue
             file = load_files(file, verbose)
 
-            area = get_area_input()
-
+            area, suf = get_area_input()
+            print (area, suf)
             file.to_crs(crs=target_crs, inplace=True)
             box = file.total_bounds
             # edge length of individual hexagon is calculated using the area
@@ -326,7 +326,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
                     planning_unit_grid.reset_index(drop=True, inplace=True)
                     planning_unit_grid[PUID] = planning_unit_grid.index + 1
 
-                planning_unit_grid.name = "Planning Unit Grid"
+                planning_unit_grid.name = f'Planning_Unit_Grid_{str(area/(SUFFIX_DICT[suf]**2).replace(".","-"))}{suf.replace(SQ,"2")}'
                 # planning_unit_grid.to_file("planning_unit_grid.shp")
 
             except KeyboardInterrupt:
@@ -360,43 +360,57 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             # The inputs below will get the information needed to
             # create a boundary that will be filled with the hexagons as
             # well as define the hexagon cell size
-            area = get_user_float("Grid Cell Area (Meters Squared):")
-            grid_size_x = get_user_float("Grid Size X (m): ")
-            grid_size_y = get_user_float("Grid Size Y (m): ")
+            area, suf = get_area_input()
+            grid_size_x = get_user_float(f'Grid Size X ({suf.replace(SQ,"")}): ') * SUFFIX_DICT[suf]
+            grid_size_y = get_user_float(f'Grid Size Y ({suf.replace(SQ,"")}): ') * SUFFIX_DICT[suf]
             grid_x_coor = get_user_float("Central x coordinate (Same units of CRS): ")
             grid_y_coor = get_user_float("Central y coordiante (Same units of CRS): ")
-            # Half of the grid width and height can be added to the central
-            # coordinate to create a study area that meets the criteria
-            xdiff = grid_size_x / 2
-            ydiff = grid_size_y / 2
-            # Bounds of the area of interest are created by adding the half the
-            # grid size to each coordinate
-            xmax = grid_x_coor + xdiff
-            xmin = grid_x_coor - xdiff
-            ymax = grid_y_coor + ydiff
-            ymin = grid_y_coor - ydiff
-            area = "POLYGON(({0} {1}, {0} {3}, {2} {3}, {2} {1}, {0} {1}))".format(xmin, ymin, xmax, ymax)
-            # poly is converted to a geoseries
-            area_shply = shapely.wkt.loads(area)
-            area_geos = gpd.GeoSeries(area_shply)
-            box = area_geos.total_bounds
-            # edge length of individual hexagon is calculated using the area
-            # edge = math.sqrt(Area**2 / (3 / 2 * math.sqrt(3)))
-            # grid is created that has the central points of each hexagon
-            hex_centers, edge = create_hexgrid(box, area)
-            # Empty list that will contain the hexagon geometry
-            hexagons = []
-            # centre points are iterated through the function that creates a
-            # hexagon around each of them and adds it to the list
-            for center in hex_centers:
-                hexagons.append(create_hexagon(edge, center[0], center[1]))
-            # Geometry list is turned into a geodataframe
-            planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=target_crs)
-            # unique PUID is assigned to each hexagon
-            planning_unit_grid.name = "Planning Unit Grid"
-            planning_unit_grid[PUID] = planning_unit_grid.index + 1
-            # file is saved for user to reuse
-            # planning_unit_grid.to_file("planning_unit_grid.shp")
+
+            if verbose:
+                progress = print_progress_start(ABORT + "Generating Planning Unit Grid")
+            try:
+                # Half of the grid width and height can be added to the central
+                # coordinate to create a study area that meets the criteria
+                xdiff = grid_size_x / 2
+                ydiff = grid_size_y / 2
+                # Bounds of the area of interest are created by adding the half the
+                # grid size to each coordinate
+                xmax = grid_x_coor + xdiff
+                xmin = grid_x_coor - xdiff
+                ymax = grid_y_coor + ydiff
+                ymin = grid_y_coor - ydiff
+                box = "POLYGON(({0} {1}, {0} {3}, {2} {3}, {2} {1}, {0} {1}))".format(xmin, ymin, xmax, ymax)
+                # poly is converted to a geoseries
+                area_shply = shapely.wkt.loads(box)
+                area_geos = gpd.GeoSeries(area_shply)
+                box = area_geos.total_bounds
+                # edge length of individual hexagon is calculated using the area
+                # edge = math.sqrt(Area**2 / (3 / 2 * math.sqrt(3)))
+                # grid is created that has the central points of each hexagon
+                hex_centers, edge = create_hexgrid(box, area)
+                # Empty list that will contain the hexagon geometry
+                hexagons = []
+                # centre points are iterated through the function that creates a
+                # hexagon around each of them and adds it to the list
+                for center in hex_centers:
+                    hexagons.append(create_hexagon(edge, center[0], center[1]))
+
+
+                # Geometry list is turned into a geodataframe
+                planning_unit_grid = gpd.GeoDataFrame(geometry=hexagons, crs=target_crs)
+                # unique PUID is assigned to each hexagon
+                planning_unit_grid.name = f'Planning_Unit_Grid_{str(area/(SUFFIX_DICT[suf]**2).replace(".","-"))}{suf.replace(SQ,"2")}'
+                planning_unit_grid[PUID] = planning_unit_grid.index + 1
+                # file is saved for user to reuse
+                # planning_unit_grid.to_file("planning_unit_grid.shp")
+            except KeyboardInterrupt:
+                print_warning_msg(f"Grid Generation Aborted\n)")
+            except Exception as e:
+                print_warning_msg(f"Error during Grid Generation\n")
+                print(e)
+            finally:
+                if verbose:
+                    print_progress_stop(progress)
             break
 
         # 9 Return to Main Menu
@@ -1004,7 +1018,7 @@ def main():
         # intialize variables
         work_saved = False  # flag to save the results
         planning_unit_grid = gpd.GeoDataFrame()  # planning unit grid
-        filtered_planning_unit_grid = gpd.GeoDataFrame()  # this is the planning unit grid after filtering, now obsolete
+        # filtered_planning_unit_grid = gpd.GeoDataFrame()  # this is the planning unit grid after filtering, now obsolete
         conserv_layers = []  # list of conservation feature layers gdfs, name will change to conservation_features
         filtered_conserv_layers = []  # this is list of conservation_features gdfs after filtering
         intersections_gdf = []  # list of gdfs of planning unit / conservation feature intersections

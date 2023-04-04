@@ -250,11 +250,11 @@ def save_gdf(
             progress = print_progress_start(ABORT + "Saving")
         file_name = get_save_file_name(title=title, f_types=ft_standard, initialfile=initialfile)
         if file_name:
-            ext = file_name.split(".")[-1]
+            ext = file_name.split(".")[-1].lower()
             if ext == SHAPE_DRIVER:
                 gdf.to_file(file_name)
                 saved = True
-            elif ext == GPKG_DRIVER:
+            elif ext == GPKG_DRIVER.lower():
                 gdf.to_file(file_name, driver=GPKG_DRIVER)
                 saved = True
             else:
