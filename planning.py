@@ -709,8 +709,6 @@ def query_conservation_layers(
 
     if attribute:
         filtered_conserv_layers = filter_by_attribute(filtered_conserv_layers, attribute)
-        for layer in filtered_conserv_layers:
-            print(f"{layer.name}")
 
     return filtered_conserv_layers
 
