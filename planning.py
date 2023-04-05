@@ -7,10 +7,12 @@ This file contains the main script for the GEOM4009 planning project.
 It contains the main menu and all the functions for the different the
 different steps of the data and planning process.
 
-NOTE: This script must be run in the geom4009 environment, but will require
+NOTE: This script has its own environment availble to build with the
+      planningproj_env.yml file.
+      It can also be run in the geom4009 environment, but will require
       the installation of the following additional packages:
 
-    conda install -c conda-forge tk  --> provides the tkinter GUI
+        conda install -c conda-forge tk  --> provides the tkinter GUI
 
 """
 # Import modules
@@ -21,10 +23,9 @@ import os
 os.environ["USE_PYGEOS"] = "0"
 from time import time
 
-from shapely.geometry import Polygon
-import shapely
-from math import pi, cos, sqrt
-import math
+from shapely.geometry import Point, Polygon
+from shapely import wkt
+from math import cos, sin, sqrt, radians, ceil
 
 import geopandas as gpd
 import pandas as pd
@@ -57,23 +58,29 @@ def get_crs():
     """
 
     global target_crs
-
+    title = bu("Enter a CRS to project all files to:")
     while True:
         # Ask user for CRS
         crs = input(
-            """
-        Enter a CRS to project all files.
-        1 Canada Albers Equal Area
-        2 Extract from file
-        - Any EPSG number (4087)
-        - Any Valid CRS string (e.g. 'EPSG:4087')
-        9 Quit
+            f"""
+    {title}
+       [1] Canada Albers Equal Area
+        2  Extract from file
+        -  Any EPSG number (4087)
+        -  Any Valid CRS string (e.g. 'EPSG:4087')
+        9  Quit
     >>> """
         )
 
         # Try to cast to an int
         try:
+
+            if crs == DEFAULT_INPUT:
+                crs = DEFAULT_CRS_INPUT
+                print(f"\t{crs}")
+
             crs = int(crs)
+
             # Create CRS for Albers Equal Area
             if crs == 1:
                 crs = TARGET_CRS
@@ -102,7 +109,7 @@ def get_crs():
             pass
         # Try to create the CRS
         try:
-            gdf = gpd.GeoDataFrame(geometry=[shapely.Point(0, 0)], crs=crs)
+            gdf = gpd.GeoDataFrame(geometry=[Point(0, 0)], crs=crs)
             if not gdf.crs.is_projected:
                 print_warning_msg("CRS is not projected. Please try again.")
                 continue
@@ -131,6 +138,10 @@ def get_area_input() -> float:
 
     while True:
         input_str = input(f"Grid Cell Area in {M_SQ}, {HM_SQ}, or {KM_SQ}, enter in format <number><suffix> (ex. 25km): ")
+
+        if input_str.startswith('-'):
+            print_warning_msg("Area cannot be negative")
+            continue
 
         # Remove spaces
         input_str = input_str.replace(" ", "")
@@ -179,7 +190,7 @@ def create_hexagon(l, x, y):
     :return: The polygon containing the hexagon's coordinates
     Source:https://gis.stackexchange.com/questions/341218/creating-a-hexagonal-grid-of-regular-hexagons-of-definite-area-anywhere-on-the-g
     """
-    c = [[x + math.cos(math.radians(angle)) * l, y + math.sin(math.radians(angle)) * l] for angle in range(0, 360, 60)]
+    c = [[x + cos(radians(angle)) * l, y + sin(radians(angle)) * l] for angle in range(0, 360, 60)]
     return Polygon(c)
 
 
@@ -192,10 +203,10 @@ def create_hexgrid(bbx, area):
     :return: The hexagon grid
     Source:https://gis.stackexchange.com/questions/341218/creating-a-hexagonal-grid-of-regular-hexagons-of-definite-area-anywhere-on-the-g
     """
-    side = math.sqrt(area / (1.5 * math.sqrt(3)))
+    side = sqrt(area / (1.5 * sqrt(3)))
 
     grid = []
-    v_step = math.sqrt(3) * side
+    v_step = sqrt(3) * side
     h_step = 1.5 * side
 
     x_min = min(bbx[0], bbx[2])
@@ -203,10 +214,10 @@ def create_hexgrid(bbx, area):
     y_min = min(bbx[1], bbx[3])
     y_max = max(bbx[1], bbx[3])
 
-    h_skip = math.ceil(x_min / h_step) - 1
+    h_skip = ceil(x_min / h_step) - 1
     h_start = h_skip * h_step
 
-    v_skip = math.ceil(y_min / v_step) - 1
+    v_skip = ceil(y_min / v_step) - 1
     v_start = v_skip * v_step
 
     h_end = x_max + h_step
@@ -264,21 +275,28 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
 
     planning_unit_grid = gpd.GeoDataFrame()
     global target_crs
+    title = bu("Create Planning Unit Grid:")
 
     while True:
-        try:
-            selection = int(
-                input(
-                    """
-    Create Planning Unit Grid
-        1 Create Grid from Shape File extents
-        2 Create Grid from Shape File extents and clip to shape
-        3 Load existing Grid from File
-        4 Create Grid from User Input
-        9 Return to Main Menu
+        selection = (
+            input(
+                f"""
+    {title}
+       [1] Create Grid from Shape File extents
+        2  Create Grid from Shape File extents and clip to shape
+        3  Load existing Grid from File
+        4  Create Grid from User Input
+        9  Return to Main Menu
     >>> """
-                )
             )
+        )
+
+        if selection == DEFAULT_INPUT:
+            selection = DEFAULT_GRID_INPUT
+            print(f"\t{selection}")
+
+        try:
+            selection = int(selection)
         except ValueError:
             print_warning_msg(msg_value_error)
             continue
@@ -381,7 +399,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
                 ymin = grid_y_coor - ydiff
                 box = "POLYGON(({0} {1}, {0} {3}, {2} {3}, {2} {1}, {0} {1}))".format(xmin, ymin, xmax, ymax)
                 # poly is converted to a geoseries
-                area_shply = shapely.wkt.loads(box)
+                area_shply = wkt.loads(box)
                 area_geos = gpd.GeoSeries(area_shply)
                 box = area_geos.total_bounds
                 # edge length of individual hexagon is calculated using the area
@@ -547,23 +565,29 @@ def load_convservation_layers() -> list[gpd.GeoDataFrame]:
 
     """
     conserv_layers = [] # list to hold conservation feature layers
-
+    title = bu("Load Conservation Feature Layers:")
     # get list of files to load
     while True:
-        try:
-            selection = int(
-                input(
-                    """
-    Load Conservation Feature Layers
-        1 Select Files
-        2 All from Directory
-        9 Return to Main Menu
+        selection = (
+            input(
+                f"""
+    {title}
+       [1] Select Files
+        2  All from Directory
+        9  Return to Main Menu
     >>> """
-                )
             )
+        )
+
+        if selection == DEFAULT_INPUT:
+            selection = DEFAULT_LOAD_CONSERVATION_INPUT
+            print(f"\t{selection}")
+        try:
+            selection = int(selection)
         except ValueError:
             print_warning_msg(msg_value_error)
             continue
+
 
         # 1 Select Files
         if selection == 1:
@@ -656,22 +680,28 @@ def query_conservation_layers(
                     print_warning_msg(f"Attribute {attribute} not found in gdf {gdf.name}")
         return filtered_gdf_list
 
+    title = bu("Query Conservation Feature Layers:")
     while True:
-        try:
-            selection = int(
-                input(
-                    """
-    Query Conservation Feature Layers
-        1 ID
-        2 CLASS_TYPE
-        3 GROUP_
-        4 NAME
-        5 Choose Attribute
-        9 Return to Main Menu
+        selection = (
+            input(
+               f"""
+    {title}
+       [1] ID
+        2  CLASS_TYPE
+        3  GROUP_
+        4  NAME
+        5  Choose Attribute
+        9  Return to Main Menu
     >>> """
                 )
             )
 
+        if selection == DEFAULT_INPUT:
+            selection = DEFAULT_QUEURY_INPUT
+            print(f"\t{selection}")
+
+        try:
+            selection = int(selection)
         except ValueError:
             print_warning_msg(msg_value_error)
             continue
@@ -942,23 +972,28 @@ def plot_layers(
         else:
             print_warning_msg("Nothing plot.")
         return
-
+    title = bu("View Layers Menu:")
     while True:
-        try:
-            selection = int(
-                input(
-                    """
-    View Layers Menu:
-        1 Planning Unit Grid
-        2 Conservation Features Files
-        3 Filtered Conservation Features
-        9 Return to Main Menu
+        selection = (
+            input(
+                f"""
+    {title}
+        1  Planning Unit Grid
+        2  Conservation Features Files
+        3  Filtered Conservation Features
+       [9] Return to Main Menu
     >>> """
-                )
             )
+        )
+        if selection == DEFAULT_INPUT:
+            selection = DEFAULT_PLOT_INPUT
+            print(f"\t{selection}")
+        try:
+            selection = int(selection)
         except ValueError:
             print_warning_msg(msg_value_error)
             continue
+
 
         # 1 Planning Unit Grid
         if selection == 1:
@@ -1027,20 +1062,20 @@ def main():
         )  # dataframe of planning unit / conservation feature intersections, used to easy csv export
 
         get_crs()
-
+        title = bu("Main Menu:")
         while True:
             try:
                 selection = int(
                     input(
-                        """
-    Main Menu:
-        1 Create Planning Unit Grid
-        2 Load Conservation Features Files
-        3 Filter Conservation Features
-        4 View Layers
-        5 Calculate Overlap
-        6 Save Results
-        9 Quit
+                        f"""
+    {title}
+        1  Create Planning Unit Grid
+        2  Load Conservation Features Files
+        3  Filter Conservation Features
+        4  View Layers
+        5  Calculate Overlap
+        6  Save Results
+        9  Quit
     >>> """
                     )
                 )
@@ -1085,6 +1120,7 @@ def main():
 
             # 5 Calculate Overlap
             elif selection == 5:
+                work_saved = False
                 intersections_gdf = calculate_overlap(planning_unit_grid, filtered_conserv_layers)
                 if len(intersections_gdf):
                     intersections_df = pd.DataFrame(gpd.GeoDataFrame(pd.concat(intersections_gdf, ignore_index=True)))
@@ -1150,7 +1186,9 @@ def main():
                 quit = "y"
                 if not work_saved:
                     print_warning_msg("No overlap results were saved.")
-                    quit = input("Are you sure you want to quit? (y/n): ").casefold()
+                    quit = input("Are you sure you want to quit? (y/[n]): ").lower()
+                if quit == "":
+                    quit = DEFAULT_QUIT
                 if quit == "y":
                     break
                 continue
