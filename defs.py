@@ -33,6 +33,17 @@ msg_processing = "Processing data"
 ABORT = "(Use 'ctrl + c' to abort)\n"
 SQ = "\u00b2"
 
+# default option values
+# If you change these, you must also change the corresponding
+# default [#] indicators in the menu
+DEFAULT_INPUT = ''
+DEFAULT_CRS_INPUT = 1
+DEFAULT_GRID_INPUT = 1
+DEFAULT_LOAD_CONSERVATION_INPUT = 1
+DEFAULT_QUEURY_INPUT = 1
+DEFAULT_PLOT_INPUT = 9
+DEFAULT_QUIT = 'n'
+
 # colours
 RED = "\033[1;31m"
 GREEN = "\033[1;32m"
