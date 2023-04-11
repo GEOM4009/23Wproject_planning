@@ -1002,19 +1002,19 @@ def plot_layers(
         if selection == 1:
             print_info("Plotting Planning Unit Grid...")
             plot([] if planning_unit_grid.empty else [planning_unit_grid])
-            continue
+            break
 
         # 2 All Conservation Features Files
         elif selection == 2:
             print_info("Plotting Conservation Features...")
             plot(conserv_layers)
-            continue
+            break
 
         # 3 Filtered Conservation Features
         elif selection == 3:
             print_info("Plotting Filtered Conservation Features...")
             plot(filtered_conserv_layers)
-            continue
+            break
 
         # 9 Return to Main Menu
         elif selection == 9:

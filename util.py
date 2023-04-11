@@ -35,7 +35,7 @@ import geopandas as gpd
 stop_progress = False  # bollean to stop the progress thread
 
 def bu(msg: str) -> str:
-    """Format a string as bold and underlined. Used for menu titles.
+    """Format a string as bold. Used for menu titles.
     Author: Mitch Albert
 
     :param msg: The string to format.
@@ -43,7 +43,7 @@ def bu(msg: str) -> str:
     :return: The formatted string.
     :rtype: str
     """
-    return f"{BOLD}{UNDERLINE}{msg}{RST}"
+    return f"{BOLD}{msg}{RST}"
 
 def print_progress_start(
     msg: str = msg_processing, dots: int = 10, time: float = 1

@@ -27,6 +27,7 @@ GPKG_DRIVER = "GPKG"
 SHAPE_DRIVER = "shp"
 
 # Message formatting
+COLOUR = False
 RED = "\033[1;31m"
 GREEN = "\033[1;32m"
 YELLOW = "\033[1;33m"
@@ -43,6 +44,8 @@ BOLD = "\033[1m"
 UNDERLINE = "\033[4m"
 RST = "\033[0m"
 
+if not COLOUR:
+    RED = GREEN = YELLOW = BLUE = MAGENTA = CYAN = HEADER = OKBLUE = OKCYAN = OKGREEN = WARNING = FAIL = BOLD = UNDERLINE = RST = ""
 
 # message strings
 msg_value_error = "Please enter a valid integer."
@@ -50,7 +53,7 @@ msg_value_error_float = "Please enter a valid float value."
 msg_processing = "Processing data"
 ABORT = "(Use 'ctrl + c' to abort)\n"
 SQ = "\u00b2"
-intro_title = f"{BOLD}{UNDERLINE}***Conservation Feature Planning Data Preparation***{RST}"
+intro_title = f"{BOLD}***Conservation Feature Planning Data Preparation***{RST}"
 intro_message = f"""
      {intro_title}
     Please use the menus to prepare your data accordingly.
