@@ -25,6 +25,7 @@ The workspace and repo for the GEOM4009 'Planning' group project
 - [*geopandas*](https://geopandas.org/) powerful geospatial data handling
 - [*tkinter*](https://docs.python.org/3/library/tkinter.html) GUI toolkit
 - [*psutil*](https://psutil.readthedocs.io/en/latest/) process and system utilities
+- [*sphinx*](https://www.sphinx-doc.org/en/master/) documentation generator
 
 
 
