@@ -26,25 +26,7 @@ DEFAULT_RESULTS_FILE_NAME = "marxan_results"
 GPKG_DRIVER = "GPKG"
 SHAPE_DRIVER = "shp"
 
-# message strings
-msg_value_error = "Please enter a valid integer."
-msg_value_error_float = "Please enter a valid float value."
-msg_processing = "Processing data"
-ABORT = "(Use 'ctrl + c' to abort)\n"
-SQ = "\u00b2"
-
-# default option values
-# If you change these, you must also change the corresponding
-# default [#] indicators in the menu
-DEFAULT_INPUT = ''
-DEFAULT_CRS_INPUT = 1
-DEFAULT_GRID_INPUT = 1
-DEFAULT_LOAD_CONSERVATION_INPUT = 1
-DEFAULT_QUEURY_INPUT = 1
-DEFAULT_PLOT_INPUT = 9
-DEFAULT_QUIT = 'n'
-
-# colours
+# Message formatting
 RED = "\033[1;31m"
 GREEN = "\033[1;32m"
 YELLOW = "\033[1;33m"
@@ -60,6 +42,46 @@ FAIL = "\033[91m"
 BOLD = "\033[1m"
 UNDERLINE = "\033[4m"
 RST = "\033[0m"
+
+
+# message strings
+msg_value_error = "Please enter a valid integer."
+msg_value_error_float = "Please enter a valid float value."
+msg_processing = "Processing data"
+ABORT = "(Use 'ctrl + c' to abort)\n"
+SQ = "\u00b2"
+intro_title = f"{BOLD}{UNDERLINE}***Conservation Feature Planning Data Preparation***{RST}"
+intro_message = f"""
+     {intro_title}
+    Please use the menus to prepare your data accordingly.
+    The first step will be to select a CRS that all files
+    will be projected to. You will then be able to create
+    or load a planning unti grid. Note if you load an
+    existing planning unit grid its CRS will be used
+    instead if it is in a projected CRS. You will then be
+    able to load a conservation feature layer(s), and filter
+    them as required. After loading a planning unit grid and
+    conservation features you will be able to calculate
+    the conservation feature area within each planning
+    unit. Finally, you will be can save the results to a
+    file, inlcuding the grid, the conservation features
+    used, and a csv file with the results. Options
+    indicated with square brackets [#] are the default,
+    and will be selected if you press enter without value.
+    """
+
+
+# default option values
+# If you change these, you must also change the corresponding
+# default [#] indicators in the menu
+DEFAULT_INPUT = ''
+DEFAULT_CRS_INPUT = 1
+DEFAULT_GRID_INPUT = 1
+DEFAULT_LOAD_CONSERVATION_INPUT = 1
+DEFAULT_QUEURY_INPUT = 1
+DEFAULT_PLOT_INPUT = 9
+DEFAULT_QUIT = 'n'
+
 
 # attribute names
 CLASS = "CLASS_TYPE"

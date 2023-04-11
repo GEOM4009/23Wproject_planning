@@ -17,7 +17,6 @@ NOTE: This script has its own environment availble to build with the
 """
 # Import modules
 from util import *
-from defs import *
 import os
 
 os.environ["USE_PYGEOS"] = "0"
@@ -41,6 +40,7 @@ from functools import partial
 verbose = True
 CORES = psutil.cpu_count(logical=False)
 target_crs = TARGET_CRS
+intro = True
 
 # %% Obtain the CRS from the user
 
@@ -48,12 +48,11 @@ target_crs = TARGET_CRS
 def get_crs():
     """
     Author: Ethan
-    The user enters the crs and if it is alber equal area then they have to enter the required coordinates which it will be processed into the crs formula to create the crs which will be
-    saved as a variable called target_crs. This will make it so the rest of the functions can call this function to keep a consistent CRS.
-
-    Parameters:
-
-        target crs: the formula for the crs. Then to use the crs pyproj is needed.
+    The user enters the crs that will be used for the all of the geoDataFrames.
+    This will keep a consistent and projected CRS, which is required for the overlay
+    operations to work correctly. Note that the crs may be overridden if the user
+    loads a pre-existing planning unit grid with a projected CRS, this is because the
+    crs of the planning unit grid will be used instead to avoid distortion.
 
     """
 
@@ -137,7 +136,7 @@ def get_area_input() -> float:
     """
 
     while True:
-        input_str = input(f"Grid Cell Area in {M_SQ}, {HM_SQ}, or {KM_SQ}, enter in format <number><suffix> (ex. 25km): ")
+        input_str = input(f"Hexagonal Cell Area in {M_SQ}, {HM_SQ}, or {KM_SQ}, enter in format <number><suffix> (ex. 25km): ")
 
         if input_str.startswith('-'):
             print_warning_msg("Area cannot be negative")
@@ -362,11 +361,15 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             file = get_file(title="Select a file to load the grid from")
             if file:
                 planning_unit_grid = load_files(file, verbose)
-                target_crs = planning_unit_grid.crs
-                if verbose:
-                    print_info(f"Hex area: {round(planning_unit_grid.geometry.area[0])}")
+                if not planning_unit_grid.crs.is_projected:
+                    print_warning_msg("Loaded grid is not in a projected CRS, porjecting to selected CRS instead, this may cause distortion!")
+                    planning_unit_grid = project_gdfs([planning_unit_grid], target_crs)[0]
+                else:
+                    target_crs = planning_unit_grid.crs
                     print_warning_msg(f"Loaded grid will override target CRS.")
                     print_info(f"CRS is now set to {target_crs.to_string()}.")
+                if verbose:
+                    print_info(f"Hex area: {round(planning_unit_grid.geometry.area[0])}")
             else:
                 print_warning_msg("No file loaded, please try again.")
                 continue
@@ -379,10 +382,10 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             # create a boundary that will be filled with the hexagons as
             # well as define the hexagon cell size
             area, suf = get_area_input()
-            grid_size_x = get_user_float(f'Grid Size X ({suf.replace(SQ,"")}): ') * SUFFIX_DICT[suf]
-            grid_size_y = get_user_float(f'Grid Size Y ({suf.replace(SQ,"")}): ') * SUFFIX_DICT[suf]
-            grid_x_coor = get_user_float("Central x coordinate (Same units of CRS): ")
-            grid_y_coor = get_user_float("Central y coordiante (Same units of CRS): ")
+            grid_size_x = get_user_float(f'Overall Size of Grid in X ({suf.replace(SQ,"")}): ') * SUFFIX_DICT[suf]
+            grid_size_y = get_user_float(f'Overall Size of Grid in Y ({suf.replace(SQ,"")}): ') * SUFFIX_DICT[suf]
+            grid_x_coor = get_user_float("Central x coordinate of grid (Same units as CRS): ")
+            grid_y_coor = get_user_float("Central y coordinate of grid (Same units as CRS): ")
 
             if verbose:
                 progress = print_progress_start(ABORT + "Generating Planning Unit Grid")
@@ -839,7 +842,7 @@ def calculate_overlap(planning_grid: gpd.GeoDataFrame, cons_layers: list[gpd.Geo
 # %% CRS helper function
 def validate_crs(crs: any, target_crs: str) -> bool:
     """
-    Author: Winna
+    Author: Winaa
     Utility function to validate a Coordinate Reference System (CRS) and either correct it or inform users of the mismatch.
 
     Parameters:
@@ -1060,6 +1063,10 @@ def main():
         intersections_df = (
             pd.DataFrame()
         )  # dataframe of planning unit / conservation feature intersections, used to easy csv export
+
+
+        if intro:
+            print(intro_message)
 
         get_crs()
         title = bu("Main Menu:")

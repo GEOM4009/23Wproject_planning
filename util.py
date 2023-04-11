@@ -19,6 +19,7 @@ Revision History:
 """
 
 # import modules
+from defs import *
 from os import getcwd, chdir, path, environ, sep
 environ["USE_PYGEOS"] = "0"
 import tkinter.filedialog
@@ -26,14 +27,12 @@ from tkinter import Tk, Frame, Listbox, Scrollbar, Button
 from tkinter.constants import *
 from typing import List
 from glob import glob
-from defs import *
 import threading
 from time import sleep
 import geopandas as gpd
 
 # globals
 stop_progress = False  # bollean to stop the progress thread
-
 
 def bu(msg: str) -> str:
     """Format a string as bold and underlined. Used for menu titles.
