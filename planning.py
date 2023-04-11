@@ -309,7 +309,6 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             file = load_files(file, verbose)
 
             area, suf = get_area_input()
-            print (area, suf)
             file.to_crs(crs=target_crs, inplace=True)
             box = file.total_bounds
             # edge length of individual hexagon is calculated using the area
