@@ -1,0 +1,11 @@
+name: planningproj_env_dev
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python>=3.10
+  - geopandas
+  - tk
+  - psutil
+  - anaconda::sphinx
