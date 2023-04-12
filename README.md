@@ -23,6 +23,7 @@ The workspace and repo for the GEOM4009 'Planning' group project
 # Dependencies
 - [*python*](https://www.python.org/) tested with 3.10
 - [*geopandas*](https://geopandas.org/) powerful geospatial data handling
+- [*shapely*](https://shapely.readthedocs.io/en/stable/manual.html) computational geometry
 - [*pandas*](https://pandas.pydata.org/) data analysis and manipulation
 - [*matplotlib*](https://matplotlib.org/) visualizations 
 - [*tkinter*](https://docs.python.org/3/library/tkinter.html) GUI toolkit
