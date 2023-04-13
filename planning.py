@@ -31,7 +31,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from multiprocessing import Pool
-
 import numpy as np
 import psutil
 from functools import partial
@@ -361,7 +360,7 @@ def create_planning_unit_grid() -> gpd.GeoDataFrame:
             if file:
                 planning_unit_grid = load_files(file, verbose)
                 if not planning_unit_grid.crs.is_projected:
-                    print_warning_msg("Loaded grid is not in a projected CRS, porjecting to selected CRS instead, this may cause distortion!")
+                    print_warning_msg("Loaded grid is not in a projected CRS, projecting to selected CRS instead, this may cause distortion!")
                     planning_unit_grid = project_gdfs([planning_unit_grid], target_crs)[0]
                 else:
                     target_crs = planning_unit_grid.crs
