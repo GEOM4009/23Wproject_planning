@@ -87,17 +87,21 @@ DEFAULT_QUIT = 'n'
 
 
 # attribute names
+ID = "ID"       # id field name for conservation features, this must be present in the conservation feature layers
+
 CLASS = "CLASS_TYPE"
 GROUP = "GROUP_"
-ID = "ID"
 NAME = "NAME"
 PUID = "GRID_ID"
-AREA_X = "AREA_X"
+GEOMETRY = "geometry"
+MAP_COLUMN = "ID"
+
+# marxan csv header names
 SPECIES = "species"
 PU = "pu"
 AMOUNT = "amount"
-GEOMETRY = "geometry"
-MAP_COLUMN = "ID"
+
+
 
 # Units
 # Prefixes
