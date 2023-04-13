@@ -26,7 +26,7 @@ What coordinate reference systems can be used with this application?
   - Any coordinate system with an EPSG code can be entered if it is not the default option provided (Albers Equal Area)
   - If the CRS does not have an EPSG code it can be loaded from a file that has the desired CRS
 
-Can i use a pre-existing Planning Unit Grid?
+Can I use a pre-existing Planning Unit Grid?
  - Yes, simply select the option "Load existing Grid from File" to load a grid from file
  - However, If you use a prexisting grid it must contain a column "GRID_ID" with a unique value for each cell, the column name can be updated in the def.py file if desired.
  - Note: Loading a pre-existing planning unit grid will (if it is projected) override the target CRS to avoid distortion, this CRS will then be used for all files
