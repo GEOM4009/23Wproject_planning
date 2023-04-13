@@ -92,7 +92,7 @@ ID = "ID"       # id field name for conservation features, this must be present 
 CLASS = "CLASS_TYPE"
 GROUP = "GROUP_"
 NAME = "NAME"
-PUID = "GRID_ID"
+PUID = "GRID_ID"  # grid id field name for planning unit grid, this must be present in the planning unit grid
 GEOMETRY = "geometry"
 MAP_COLUMN = "ID"
 
