@@ -25,7 +25,7 @@ User Guide:
 
 •	A grid can also be loaded from a file, this could be done to ensure consistency with past research that has been done, as well as speeding up the loading time of the code if the grid has a fine resolution and a large extent. 
 
-7. Creat grid from user input
+7. Create grid from user input
 
 •	Lastly a grid can be created entirely with manual inputs, with the user entering the central x and y coordinate, the length and width of the grid, and the area of the hexagon cells. The coordinate and x/y coordinates will be entered in the same units as the coordinate reference system, with the area being in those units squared.
 
