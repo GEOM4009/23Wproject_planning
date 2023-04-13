@@ -6,7 +6,7 @@ Why is the processing time so long?
   - Intersecting these large grids with the conservation features can also be a time intesive process and may take more than an hour
   - Using a multiple overlapping conservation features could also result in longer processing time during overlaps
  
-I entered the incorrect file or variable input during one of the steps, how do i fix this?
+I entered the incorrect file or variable input during one of the steps, how do I fix this?
   - The step can be repeated by returning to the main menu and doing the same process again
 
 What units are the variable inputs for the manual grid generation?
@@ -18,5 +18,5 @@ Can this tool be applied to regions outside of Nunavut?
   
 What coordinate reference systems can be used with this application?
   - Any CRS used for this function must be a projected coordinate system and not a geographic projection systems
-  - Any coordiante system with an EPSG code can be entered if it is not the default option provided (Albers Equal Area)
+  - Any coordinate system with an EPSG code can be entered if it is not the default option provided (Albers Equal Area)
   - If the CRS does not have an EPSG code it can be loaded from a file that has the desired CRS
